@@ -132,7 +132,56 @@ async def handle_offline_user(username: str, websocket: WebSocket):
 
 @app.get("/")
 async def read_root():
-    return HTMLResponse(content="""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>TikTok Overlay</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-gray-900 text-white flex items-center justify-center h-screen font-sans"><div class="text-center bg-gray-800 p-10 rounded-lg shadow-2xl"><h1 class="text-4xl font-bold mb-4">Dynamic TikTok Live Overlay</h1><p class="text-lg text-gray-300">To use, navigate to the URL for the user you want to track.</p><p class="mt-4 bg-gray-700 p-3 rounded">For example: <strong class="text-white">/username</strong></p></div></body></html>""")
+    return HTMLResponse(content="""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TikTok Live Overlay</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAMAAAArteDzAAAA/FBMVEUAAAAl8+3/KFj+LFUn8+//MFgl9e4l9O7+LFX+LVX/MFAl9O4l9O79LFYg+e8l9O7+LVX/LFQo9+/9Llf/LVP9K1X9LFQn9e7/K1YHBwf+LFb9LVT/LVYn9O8m9O7+LVYl9O7+LFUm9e79LFUk8u7/MFUAAAAg0cy4MU5tEyUlBw1uXGrWJkkm8+7/LFYcubMg0c0Yop//LVYAAAAl9O7+LFUFHx5gESAg1dB/Fiu+IUCeGzUj5d/uKVBvEyUSenfeJ0uPGTAQAwUJPTwHLi1ACxUCDw8gBgsXmJWuHjsUiYYOXFoexsEbsq3OJEVPDhowCBEQa2gLTEsMTUvQL1NGAAAAM3RSTlMAYCC/QCCfgO9gEL+PgBDv30AgcFCfgG8w6q+gjzDf38/Pr5BQMCDf39/fz8+vgH9wYFAMSP/SAAAC50lEQVRYw+3YZ3eiQBSA4YkUgQjWGNPrZnuFGyEI1liSTd3//192YDF3jG5AmJz9sL5fPfOcCygMkn+aIWJ7vNA1C5NfA13nidpRb3O5HDf03IzyAHLc0clroE2AH9zRngc6d9R0QOCP9jqgcUfNS9C5oZivaNxQzNnliKJa5odiH874odj51wo/FFVbFnmh2HBMb4THcoULij3a9AORE4r1xzZHFHu3vatyRy8AhP8HvWy+AtoEd5QONU43C7IsF8RFKCCbHDXy61ZUfjH65WBytxQqBmIMmpN2wJs07xOiFSRbN1ftjxu7+iKUEMrSbi9ctxOHrhUj8eYhRBwAWIxS9uQAwmLQQkSO+yYtBqU1dEGJQ+VoSro+DsW0ck2txZmtBxOLQePLh6Z9bnJCcWP7E00OaGUf5+SGymhyQytWUB+5e991Xd9Ni+KgV7gFu4CoDKgRHvxwanYBsqF46a+n5i2EKRtVVa1up0Y/B4POzqnUNRKVEg3uI+3pJQpNQSIkG7pnMavCa0QPOisqBr+laNEIaCUtC4qLxtGiO6DVSBYU7yW/mB+RQDihfQZVeaCbzCIfABrZUFyEL0kA848ZRJ2k6CmD9rx59JBBu0lRg0FNF0Bb8DUe4tc4GUr2mV3dyIPy/C2sxfyHADEanrQBviSCPncZrTFzypVkqIj3KJpTmn949fGUJt45FukdGvPV2TnxR2x2KHqS+Plsm0xb342Z7VqL/ZZCOSFqFK3B7OvceiFfOC5Ge7UBO6iyxFaibc6q1lN2YOKgGyRxh62hOdN1xLbaTx+MOkCTkqOVYjQqNnhst6/Zs+LioAlbo6O+nAM4aNLyVy+bzdCsk+XK9+PNElm2b1txx16SyNKd/U3tTUJTeUNSJL1faPoemmnUT83R8yn9DuCxp6sO7l0PxcuuB3/a0Uj6pKPgravrOE530oFppTLJVk2AZwkqyZ5UZdyjepnwqlGr6npVbWhk1apVCfoNtEO7SNpuAb8AAAAASUVORK5CYII=">
+        <style>
+            body { font-family: 'Inter', sans-serif; }
+            .bg-gradient-radial { background-image: radial-gradient(circle at top left, #1e3a8a, #111827 25%); }
+        </style>
+    </head>
+    <body class="bg-zinc-900 text-white flex items-center justify-center h-screen bg-gradient-radial">
+        <div class="max-w-md w-full text-center bg-zinc-900/50 backdrop-blur-sm border border-zinc-700 p-8 rounded-2xl shadow-2xl">
+            <div class="flex justify-center mb-6">
+                <i class="fa-brands fa-tiktok text-6xl text-sky-400"></i>
+            </div>
+            <h1 class="text-4xl font-extrabold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-400">TikTok Live Overlay</h1>
+            <p class="text-lg text-gray-400 mb-8">Enter a TikTok username below to start tracking their live stream.</p>
+            
+            <form id="user-form" class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">@</span>
+                    <input type="text" id="username-input" placeholder="username" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg pl-8 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all">
+                </div>
+                <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Track User</span>
+                </button>
+            </form>
+
+            <p class="text-xs text-zinc-500 mt-6">Alternatively, navigate directly via URL: <code class="bg-zinc-700 p-1 rounded-md">/username</code></p>
+        </div>
+
+        <script>
+            document.getElementById('user-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const username = document.getElementById('username-input').value.trim();
+                if (username) {
+                    window.location.href = `/${username}`;
+                }
+            });
+        </script>
+    </body>
+    </html>
+    """)
 
 @app.get("/{username}")
 async def get_overlay_for_user(username: str):

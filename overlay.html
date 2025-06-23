@@ -3,11 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Live Overlay</title>
+    <title>__PAGE_TITLE__</title>
+    <meta name="description" content="__PAGE_DESCRIPTION__">
+    <link rel="icon" type="image/png" href="__PAGE_ICON__">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="__PAGE_TITLE__">
+    <meta property="og:description" content="__PAGE_DESCRIPTION__">
+    <meta property="og:image" content="__PAGE_ICON__">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="__PAGE_TITLE__">
+    <meta name="twitter:description" content="__PAGE_DESCRIPTION__">
+    <meta name="twitter:image" content="__PAGE_ICON__">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAMAAAArteDzAAAA/FBMVEUAAAAl8+3/KFj+LFUn8+//MFgl9e4l9O7+LFX+LVX/MFAl9O4l9O79LFYg+e8l9O7+LVX/LFQo9+/9Llf/LVP9K1X9LFQn9e7/K1YHBwf+LFb9LVT/LVYn9O8m9O7+LVYl9O7+LFUm9e79LFUk8u7/MFUAAAAg0cy4MU5tEyUlBw1uXGrWJkkm8+7/LFYcubMg0c0Yop//LVYAAAAl9O7+LFUFHx5gESAg1dB/Fiu+IUCeGzUj5d/uKVBvEyUSenfeJ0uPGTAQAwUJPTwHLi1ACxUCDw8gBgsXmJWuHjsUiYYOXFoexsEbsq3OJEVPDhowCBEQa2gLTEsMTUvQL1NGAAAAM3RSTlMAYCC/QCCfgO9gEL+PgBDv30AgcFCfgG8w6q+gjzDf38/Pr5BQMCDf39/fz8+vgH9wYFAMSP/SAAAC50lEQVRYw+3YZ3eiQBSA4YkUgQjWGNPrZnuFGyEI1liSTd3//192YDF3jG5AmJz9sL5fPfOcCygMkn+aIWJ7vNA1C5NfA13nidpRb3O5HDf03IzyAHLc0clroE2AH9zRngc6d9R0QOCP9jqgcUfNS9C5oZivaNxQzNnliKJa5odiH874odj51wo/FFVbFnmh2HBMb4THcoULij3a9AORE4r1xzZHFHu3vatyRy8AhP8HvWy+AtoEd5QONU43C7IsF8RFKCCbHDXy61ZUfjH65WBytxQqBmIMmpN2wJs07xOiFSRbN1ftjxu7+iKUEMrSbi9ctxOHrhUj8eYhRBwAWIxS9uQAwmLQQkSO+yYtBqU1dEGJQ+VoSro+DsW0ck2txZmtBxOLQePLh6Z9bnJCcWP7E00OaGUf5+SGymhyQytWUB+5e991Xd9Ni+KgV7gFu4CoDKgRHvxwanYBsqF46a+n5i2EKRtVVa1up0Y/B4POzqnUNRKVEg3uI+3pJQpNQSIkG7pnMavCa0QPOisqBr+laNEIaCUtC4qLxtGiO6DVSBYU7yW/mB+RQDihfQZVeaCbzCIfABrZUFyEL0kA848ZRJ2k6CmD9rx59JBBu0lRg0FNF0Bb8DUe4tc4GUr2mV3dyIPy/C2sxfyHADEanrQBviSCPncZrTFzypVkqIj3KJpTmn949fGUJt45FukdGvPV2TnxR2x2KHqS+Plsm0xb342Z7VqL/ZZCOSFqFK3B7OvceiFfOC5Ge7UBO6iyxFaibc6q1lN2YOKgGyRxh62hOdN1xLbaTx+MOkCTkqOVYjQqNnhst6/Zs+LioAlbo6O+nAM4aNLyVy+bzdCsk+XK9+PNElm2b1txx16SyNKd/U3tTUJTeUNSJL1faPoemmnUT83R8yn9DuCxp6sO7l0PxcuuB3/a0Uj6pKPgravrOE530oFppTLJVk2AZwkqyZ5UZdyjepnwqlGr6npVbWhk1apVCfoNtEO7SNpuAb8AAAAASUVORK5CYII=">
     <style>
         body { background-color: #111111; font-family: 'Inter', sans-serif; overflow: hidden; color: #a3a3a3; }
         .event-card { transform-origin: bottom; animation: slide-in-up 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
@@ -189,11 +201,10 @@
         function renderProfile(p) {
             const defaultAvatar = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
             const avatar = p.avatar || defaultAvatar;
-            document.title = `${p.nickname || p.username}'s stream | API`;
             const profileCard = `
                 <div class="pt-16 w-full">
                     <div class="flex flex-col items-center space-y-4">
-                        <img src="${avatar}" class="w-24 h-24 rounded-full border-4 border-zinc-700 -mt-12 bg-zinc-900 object-cover">
+                        <img src="${avatar}" onerror="this.onerror=null;this.src='${defaultAvatar}';" class="w-24 h-24 rounded-full border-4 border-zinc-700 -mt-12 bg-zinc-900 object-cover">
                         <div class="text-center">
                             <p class="text-2xl font-bold text-gray-100">${p.nickname || 'N/A'}</p>
                             <p class="text-gray-400">@${p.username || 'N/A'}</p>
@@ -303,14 +314,13 @@
             const username = window.location.pathname.split('/').filter(p => p)[0];
             if (!username) {
                 switchView('offline');
-                document.title = 'Error | API';
+                document.title = 'Error | TikTok API Tracker';
                 ui.containers.offlineProfile.innerHTML = `<h1 class="text-2xl text-red-400 font-bold">Error: No Username Provided</h1><p class="text-gray-300 mt-2">Please navigate to the correct URL, for example: <span class="font-mono bg-zinc-700 p-1 rounded">/your_username</span></p>`;
                 return;
             }
             
             resetUI();
             switchView('loading');
-            document.title = `${username}'s stream | API`;
             ui.status.tracking.innerHTML = `Tracking: <span class="font-bold text-white text-lg">${username}</span>`;
             ui.status.loadingText.textContent = `Looking for @${username}...`;
 

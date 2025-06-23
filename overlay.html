@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Live Overlay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAMAAAArteDzAAAA/FBMVEUAAAAl8+3/KFj+LFUn8+//MFgl9e4l9O7+LFX+LVX/MFAl9O4l9O79LFYg+e8l9O7+LVX/LFQo9+/9Llf/LVP9K1X9LFQn9e7/K1YHBwf+LFb9LVT/LVYn9O8m9O7+LVYl9O7+LFUm9e79LFUk8u7/MFUAAAAg0cy4MU5tEyUlBw1uXGrWJkkm8+7/LFYcubMg0c0Yop//LVYAAAAl9O7+LFUFHx5gESAg1dB/Fiu+IUCeGzUj5d/uKVBvEyUSenfeJ0uPGTAQAwUJPTwHLi1ACxUCDw8gBgsXmJWuHjsUiYYOXFoexsEbsq3OJEVPDhowCBEQa2gLTEsMTUvQL1NGAAAAM3RSTlMAYCC/QCCfgO9gEL+PgBDv30AgcFCfgG8w6q+gjzDf38/Pr5BQMCDf39/fz8+vgH9wYFAMSP/SAAAC50lEQVRYw+3YZ3eiQBSA4YkUgQjWGNPrZnuFGyEI1liSTd3//192YDF3jG5AmJz9sL5fPfOcCygMkn+aIWJ7vNA1C5NfA13nidpRb3O5HDf03IzyAHLc0clroE2AH9zRngc6d9R0QOCP9jqgcUfNS9C5oZivaNxQzNnliKJa5odiH874odj51wo/FFVbFnmh2HBMb4THcoULij3a9AORE4r1xzZHFHu3vatyRy8AhP8HvWy+AtoEd5QONU43C7IsF8RFKCCbHDXy61ZUfjH65WBytxQqBmIMmpN2wJs07xOiFSRbN1ftjxu7+iKUEMrSbi9ctxOHrhUj8eYhRBwAWIxS9uQAwmLQQkSO+yYtBqU1dEGJQ+VoSro+DsW0ck2txZmtBxOLQePLh6Z9bnJCcWP7E00OaGUf5+SGymhyQytWUB+5e991Xd9Ni+KgV7gFu4CoDKgRHvxwanYBsqF46a+n5i2EKRtVVa1up0Y/B4POzqnUNRKVEg3uI+3pJQpNQSIkG7pnMavCa0QPOisqBr+laNEIaCUtC4qLxtGiO6DVSBYU7yW/mB+RQDihfQZVeaCbzCIfABrZUFyEL0kA848ZRJ2k6CmD9rx59JBBu0lRg0FNF0Bb8DUe4tc4GUr2mV3dyIPy/C2sxfyHADEanrQBviSCPncZrTFzypVkqIj3KJpTmn949fGUJt45FukdGvPV2TnxR2x2KHqS+Plsm0xb342Z7VqL/ZZCOSFqFK3B7OvceiFfOC5Ge7UBO6iyxFaibc6q1lN2YOKgGyRxh62hOdN1xLbaTx+MOkCTkqOVYjQqNnhst6/Zs+LioAlbo6O+nAM4aNLyVy+bzdCsk+XK9+PNElm2b1txx16SyNKd/U3tTUJTeUNSJL1faPoemmnUT83R8yn9DuCxp6sO7l0PxcuuB3/a0Uj6pKPgravrOE530oFppTLJVk2AZwkqyZ5UZdyjepnwqlGr6npVbWhk1apVCfoNtEO7SNpuAb8AAAAASUVORK5CYII=">
+    <style>
+        body { background-color: #111111; font-family: 'Inter', sans-serif; overflow: hidden; color: #a3a3a3; }
+        .event-card { transform-origin: bottom; animation: slide-in-up 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        @keyframes slide-in-up { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #27272a; border-radius: 20px; }
+        .tab-button { transition: all 0.2s ease-in-out; }
+        .tab-button.active { background-color: #3f3f46; color: #fafafa; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .fa-circle, .fa-circle-xmark, .fa-triangle-exclamation, .fa-bug, .fa-pause-circle, .fa-play-circle, .fa-magnifying-glass { font-size: 0.7rem; vertical-align: middle; }
+        .blinking-dot {
+            animation: blink 1.5s infinite ease-in-out;
+            display: inline-block;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 9999px;
+            background-color: currentColor;
+            margin-right: 0.75rem;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+    </style>
+</head>
+<body class="h-screen">
+    <div id="loading-view" class="flex flex-col h-full w-full items-center justify-center bg-zinc-900 p-8 text-center">
+        <i class="fa-solid fa-spinner fa-spin fa-3x text-sky-400"></i>
+        <p id="loading-text" class="mt-4 text-xl font-semibold text-gray-300">Connecting...</p>
+    </div>
+
+    <div id="offline-view" class="hidden flex-col h-full w-full items-center justify-center bg-zinc-900 p-8 text-center">
+        <div id="offline-profile-content" class="max-w-md w-full bg-zinc-800 rounded-2xl p-6 shadow-2xl">
+        </div>
+    </div>
+
+    <div id="live-view" class="hidden flex-col h-full p-4 space-y-4">
+        <div id="status-bar" class="flex-shrink-0 bg-zinc-900 p-3 rounded-lg flex justify-between items-center">
+            <p id="tracking-status" class="font-semibold text-gray-300"></p>
+            <p id="connection-status" class="font-semibold text-sm"></p>
+        </div>
+        <div class="grid grid-cols-4 grid-rows-2 flex-grow h-0 gap-4">
+
+            <div class="col-span-2 row-span-2 flex flex-col bg-zinc-900 rounded-lg p-3">
+                <h2 class="text-lg font-bold text-gray-200 mb-2 border-b border-zinc-800 pb-2">Live Chat</h2>
+                <div class="flex items-center space-x-2 mb-2 flex-shrink-0">
+                    <input type="text" id="chat-search-input" class="bg-zinc-800 text-gray-300 text-sm rounded-md w-full px-3 py-1.5 border border-transparent focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Search by message...">
+                    <button id="chat-filter-button" class="bg-zinc-700 hover:bg-zinc-600 text-gray-200 w-12 h-9 flex-shrink-0 flex items-center justify-center rounded-md transition-colors">
+                        <i id="chat-filter-icon" class="fa-solid fa-message"></i>
+                    </button>
+                </div>
+                <div id="comment-container" class="flex-grow overflow-y-auto space-y-2 custom-scrollbar pr-2"></div>
+            </div>
+
+            <div class="col-span-2 row-span-1 flex flex-col bg-zinc-900 rounded-lg p-3">
+                <div class="flex border-b border-zinc-800 mb-2">
+                    <button id="tab-profile" class="tab-button active py-2 px-4 text-sm font-semibold rounded-t-md">Profile</button>
+                    <button id="tab-room" class="tab-button py-2 px-4 text-sm font-semibold rounded-t-md">Room Info</button>
+                    <button id="tab-gift" class="tab-button py-2 px-4 text-sm font-semibold rounded-t-md">Gift Info</button>
+                </div>
+                <div class="flex-grow overflow-y-auto custom-scrollbar pr-2">
+                    <div id="content-profile" class="tab-content active text-sm text-gray-400 space-y-2"></div>
+                    <div id="content-room" class="tab-content"><pre class="text-xs text-gray-400">Awaiting Room Info...</pre></div>
+                    <div id="content-gift" class="tab-content"><pre class="text-xs text-gray-400">Awaiting Gift Info...</pre></div>
+                </div>
+            </div>
+
+            <div class="col-span-1 row-span-1 flex flex-col bg-zinc-900 rounded-lg p-3">
+                <div class="flex justify-between items-center text-lg font-bold text-gray-200 mb-2 border-b border-zinc-800 pb-2">
+                    <h2>Likes</h2>
+                    <p class="text-sm text-gray-400 font-medium"><span id="total-likes-count" class="font-bold text-gray-200"></span></p>
+                </div>
+                <div id="like-container" class="flex-grow overflow-y-auto space-y-2 custom-scrollbar pr-2"></div>
+            </div>
+            
+            <div class="col-span-1 row-span-1 flex flex-col bg-zinc-900 rounded-lg p-3">
+                <h2 class="text-lg font-bold text-gray-200 mb-2 border-b border-zinc-800 pb-2">Activity Feed</h2>
+                <div id="activity-container" class="flex-grow overflow-y-auto space-y-2 custom-scrollbar pr-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ui = {
+            views: {
+                loading: document.getElementById('loading-view'),
+                offline: document.getElementById('offline-view'),
+                live: document.getElementById('live-view'),
+            },
+            containers: {
+                like: document.getElementById('like-container'),
+                comment: document.getElementById('comment-container'),
+                activity: document.getElementById('activity-container'),
+                profile: document.getElementById('content-profile'),
+                room: document.getElementById('content-room'),
+                gift: document.getElementById('content-gift'),
+                offlineProfile: document.getElementById('offline-profile-content'),
+            },
+            status: {
+                tracking: document.getElementById('tracking-status'),
+                connection: document.getElementById('connection-status'),
+                loadingText: document.getElementById('loading-text'),
+            },
+            tabs: {
+                profile: document.getElementById('tab-profile'),
+                room: document.getElementById('tab-room'),
+                gift: document.getElementById('tab-gift')
+            },
+            chat: {
+                input: document.getElementById('chat-search-input'),
+                filterButton: document.getElementById('chat-filter-button'),
+                filterIcon: document.getElementById('chat-filter-icon'),
+            },
+            totalLikesCount: document.getElementById('total-likes-count'),
+        };
+
+        let chatFilterMode = 'message';
+        let currentTotalLikes = 0;
+        let animationFrameId;
+        let keepAliveInterval;
+
+        const statusIcons = {
+            live: '<i class="fa-solid fa-circle text-green-500 mr-2"></i>',
+            offline: '<i class="fa-solid fa-circle text-gray-500 mr-2"></i>',
+            ended: '<i class="fa-solid fa-circle-xmark text-red-500 mr-2"></i>',
+            disconnected: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
+            error: '<i class="fa-solid fa-bug text-red-500 mr-2"></i>',
+            warn: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
+            info: '<i class="fa-solid fa-magnifying-glass text-sky-400 mr-2"></i>'
+        };
+
+        function switchView(viewName) {
+            Object.keys(ui.views).forEach(key => ui.views[key].style.display = 'none');
+            const viewToShow = ui.views[viewName];
+            viewToShow.style.display = 'flex';
+        }
+
+        function animateCount(targetValue) {
+            const endValue = Number(String(targetValue).replace(/[^\d]/g, ''));
+            const startValue = currentTotalLikes;
+            if (isNaN(endValue) || startValue === endValue) {
+                if(!isNaN(endValue)) ui.totalLikesCount.textContent = endValue.toLocaleString();
+                return;
+            };
+
+            const duration = 500;
+            let startTime = null;
+            
+            const step = timestamp => {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                const current = Math.floor(progress * (endValue - startValue) + startValue);
+                ui.totalLikesCount.textContent = current.toLocaleString();
+                if (progress < 1) {
+                    animationFrameId = requestAnimationFrame(step);
+                } else {
+                    currentTotalLikes = endValue;
+                    ui.totalLikesCount.textContent = endValue.toLocaleString();
+                }
+            };
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(step);
+        }
+
+        function addEvent(container, htmlContent, isComment = false) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = htmlContent;
+            const newEvent = wrapper.firstElementChild;
+            if (newEvent) {
+                newEvent.classList.add('event-card');
+                container.appendChild(newEvent);
+                container.scrollTop = container.scrollHeight;
+                if(isComment) filterChat();
+            }
+        }
+        
+        function renderProfile(p) {
+            const defaultAvatar = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+            const avatar = p.avatar || defaultAvatar;
+            document.title = `${p.nickname || p.username}'s stream | API`;
+            const profileCard = `
+                <div class="pt-16 w-full">
+                    <div class="flex flex-col items-center space-y-4">
+                        <img src="${avatar}" class="w-24 h-24 rounded-full border-4 border-zinc-700 -mt-12 bg-zinc-900 object-cover">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-gray-100">${p.nickname || 'N/A'}</p>
+                            <p class="text-gray-400">@${p.username || 'N/A'}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 w-full text-center p-2 bg-zinc-900/50 rounded-md">
+                            <div>
+                                <p class="font-bold text-gray-200 text-lg">${p.followers ? Number(p.followers).toLocaleString() : '0'}</p>
+                                <p class="text-sm">Followers</p>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-200 text-lg">${p.following ? Number(p.following).toLocaleString() : '0'}</p>
+                                <p class="text-sm">Following</p>
+                            </div>
+                        </div>
+                        <div class="w-full text-left">
+                            <p class="font-bold text-gray-300">Bio:</p>
+                            <p class="p-2 bg-zinc-900/50 rounded-md max-h-24 overflow-y-auto custom-scrollbar">${p.bio || 'This user has not provided a bio.'}</p>
+                        </div>
+                    </div>
+                </div>`;
+            
+            ui.containers.profile.innerHTML = profileCard;
+            ui.containers.offlineProfile.innerHTML = profileCard;
+            if(p.likes) animateCount(p.likes);
+        }
+
+        function processEvent(data) {
+            let html, container, isComment = false, user = `<span class="font-semibold text-gray-400">${data.user || 'Someone'}</span>`;
+            switch (data.type) {
+                case 'profile_info': renderProfile(data.data); return;
+                case 'status_update':
+                    switchView(data.status === 'live' ? 'live' : 'offline');
+                    if (data.status === 'offline') {
+                        const offlineContainer = ui.containers.offlineProfile;
+                        const existingStatus = offlineContainer.querySelector('.status-message');
+                        if(existingStatus) existingStatus.remove();
+                        const statusMessage = `
+                            <p class="mt-6 text-xl font-bold text-red-400 status-message flex items-center justify-center">
+                                <span class="blinking-dot text-red-400"></span>
+                                User is not live.
+                            </p>`;
+                        offlineContainer.insertAdjacentHTML('beforeend', statusMessage);
+                    }
+                    return;
+                case 'room_info_update': ui.containers.room.innerHTML = `<pre class="text-xs text-gray-400 whitespace-pre-wrap break-all">${JSON.stringify(data.data, null, 2)}</pre>`; return;
+                case 'gift_info_update': ui.containers.gift.innerHTML = `<pre class="text-xs text-gray-400 whitespace-pre-wrap break-all">${JSON.stringify(data.data, null, 2)}</pre>`; return;
+                case 'total_likes_update': animateCount(data.count); return;
+                case 'like': 
+                    container = ui.containers.like; 
+                    html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="font-medium text-xs"><i class="fa-solid fa-heart text-red-500 w-4 text-center"></i> ${user} sent ${data.count} like(s)!</p></div>`; 
+                    break;
+                case 'comment': 
+                    container = ui.containers.comment;
+                    isComment = true;
+                    html = `<div class="bg-zinc-800/50 p-2 rounded-md" data-user="${data.user || ''}" data-comment="${data.comment || ''}"><p class="text-sm"><span class="font-bold text-gray-200">${data.user || 'User'}:</span> <span class="text-gray-400">${data.comment}</span></p></div>`; 
+                    break;
+                case 'follow': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="text-xs"><i class="fa-solid fa-user-plus text-sky-400 w-4 text-center"></i> ${user} followed!</p></div>`; break;
+                case 'share': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="text-xs"><i class="fa-solid fa-share text-purple-400 w-4 text-center"></i> ${user} shared!</p></div>`; break;
+                case 'join': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="text-xs"><i class="fa-solid fa-right-to-bracket text-gray-400 w-4 text-center"></i> ${user} joined!</p></div>`; break;
+                case 'gift': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="text-xs"><i class="fa-solid fa-gift text-orange-400 w-4 text-center"></i> ${user} sent ${data.count}x ${data.gift_name}!</p></div>`; break;
+                case 'system_status':
+                    ui.status.connection.innerHTML = `<span>${statusIcons[data.level] || ''}${data.status}</span>`;
+                    return;
+                default: return;
+            }
+            if (container) addEvent(container, html, isComment);
+        }
+        
+        function filterChat() {
+            const query = ui.chat.input.value.toLowerCase();
+            const comments = ui.containers.comment.querySelectorAll('div[data-comment]');
+            comments.forEach(comment => {
+                const user = comment.dataset.user.toLowerCase();
+                const message = comment.dataset.comment.toLowerCase();
+                const isVisible = chatFilterMode === 'message' ? message.includes(query) : user.includes(query);
+                comment.style.display = isVisible ? 'block' : 'none';
+            });
+        }
+
+        ui.chat.input.addEventListener('input', filterChat);
+        ui.chat.filterButton.addEventListener('click', () => {
+            chatFilterMode = (chatFilterMode === 'message') ? 'user' : 'message';
+            ui.chat.filterIcon.className = `fa-solid fa-${chatFilterMode === 'message' ? 'message' : 'user'}`;
+            ui.chat.input.placeholder = `Search by ${chatFilterMode}...`;
+            filterChat();
+        });
+
+        Object.keys(ui.tabs).forEach(key => {
+            ui.tabs[key].addEventListener('click', () => {
+                Object.values(ui.tabs).forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                ui.tabs[key].classList.add('active');
+                document.getElementById(`content-${key}`).classList.add('active');
+            });
+        });
+
+        function resetUI() {
+            Object.values(ui.containers).forEach(c => { if (c) c.innerHTML = ''; });
+            ['room', 'gift'].forEach(key => ui.containers[key].innerHTML = '<pre class="text-xs text-gray-400">Awaiting Info...</pre>');
+            ui.containers.profile.innerHTML = '<p class="text-center italic text-gray-500 pt-4">Awaiting data...</p>';
+            ui.totalLikesCount.textContent = '0';
+            currentTotalLikes = 0;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        }
+
+        function connect() {
+            const username = window.location.pathname.split('/').filter(p => p)[0];
+            if (!username) {
+                switchView('offline');
+                document.title = 'Error | API';
+                ui.containers.offlineProfile.innerHTML = `<h1 class="text-2xl text-red-400 font-bold">Error: No Username Provided</h1><p class="text-gray-300 mt-2">Please navigate to the correct URL, for example: <span class="font-mono bg-zinc-700 p-1 rounded">/your_username</span></p>`;
+                return;
+            }
+            
+            resetUI();
+            switchView('loading');
+            document.title = `${username}'s stream | API`;
+            ui.status.tracking.innerHTML = `Tracking: <span class="font-bold text-white text-lg">${username}</span>`;
+            ui.status.loadingText.textContent = `Looking for @${username}...`;
+
+            const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+            const ws = new WebSocket(`${protocol}://${location.host}/ws/${username}`);
+
+            ws.onopen = () => {
+                ui.status.connection.innerHTML = `<span class="text-yellow-400"><i class="fa-solid fa-plug-circle-check mr-2"></i>Socket Opened</span>`;
+                if(keepAliveInterval) clearInterval(keepAliveInterval);
+                keepAliveInterval = setInterval(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send('ping');
+                    }
+                }, 30000);
+            };
+
+            ws.onmessage = (event) => { 
+                try { 
+                    processEvent(JSON.parse(event.data)); 
+                } catch (e) { 
+                    console.error("Message Parse Error:", e, event.data); 
+                } 
+            };
+            
+            ws.onclose = () => { 
+                clearInterval(keepAliveInterval);
+                ui.status.connection.innerHTML = `<span class="text-red-500"><i class="fa-solid fa-xmark mr-2"></i>Disconnected. Retrying...</span>`; 
+                setTimeout(connect, 5000); 
+            };
+
+            ws.onerror = (e) => { 
+                console.error("WebSocket Error:", e);
+                ui.status.connection.innerHTML = `<span class="text-red-500"><i class="fa-solid fa-bug mr-2"></i>Connection Error</span>`;
+                ws.close(); 
+            };
+        }
+
+        connect();
+    </script>
+</body>
+</html>

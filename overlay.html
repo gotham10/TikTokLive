@@ -173,9 +173,14 @@
 
         let chatFilterMode = 'message';
         let activityFilterMode = 'all';
-        let currentTotalLikes = 0;
-        let animationFrameId;
+        let animationFrameIds = {};
         let keepAliveInterval;
+        
+        let animatedValues = {
+            'total-likes-count': 0,
+            'followers-count': 0,
+            'following-count': 0
+        };
 
         const statusIcons = {
             live: '<i class="fa-solid fa-circle text-green-500 mr-2"></i>',
@@ -192,32 +197,39 @@
             const viewToShow = ui.views[viewName];
             viewToShow.style.display = 'flex';
         }
+        
+        function animateValue(elementId, targetValue) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
 
-        function animateCount(targetValue) {
             const endValue = Number(String(targetValue).replace(/[^\d]/g, ''));
-            const startValue = currentTotalLikes;
-            if (isNaN(endValue) || startValue === endValue) {
-                if (!isNaN(endValue)) ui.totalLikesCount.textContent = endValue.toLocaleString();
-                return;
-            };
+            const startValue = animatedValues[elementId] || 0;
 
-            const duration = 500;
+            if (isNaN(endValue) || startValue === endValue) {
+                if (!isNaN(endValue)) element.textContent = endValue.toLocaleString();
+                animatedValues[elementId] = endValue;
+                return;
+            }
+
+            const duration = 800;
             let startTime = null;
 
             const step = timestamp => {
                 if (!startTime) startTime = timestamp;
                 const progress = Math.min((timestamp - startTime) / duration, 1);
                 const current = Math.floor(progress * (endValue - startValue) + startValue);
-                ui.totalLikesCount.textContent = current.toLocaleString();
+                element.textContent = current.toLocaleString();
+
                 if (progress < 1) {
-                    animationFrameId = requestAnimationFrame(step);
+                    animationFrameIds[elementId] = requestAnimationFrame(step);
                 } else {
-                    currentTotalLikes = endValue;
-                    ui.totalLikesCount.textContent = endValue.toLocaleString();
+                    animatedValues[elementId] = endValue;
+                    element.textContent = endValue.toLocaleString();
                 }
             };
-            cancelAnimationFrame(animationFrameId);
-            animationFrameId = requestAnimationFrame(step);
+            
+            cancelAnimationFrame(animationFrameIds[elementId]);
+            animationFrameIds[elementId] = requestAnimationFrame(step);
         }
 
         function addEvent(container, htmlContent, isComment = false) {
@@ -250,11 +262,11 @@
                         <div class="w-full glass-card rounded-lg p-4">
                             <div class="grid grid-cols-2 gap-4 text-center">
                                 <div>
-                                    <p class="font-bold text-gray-200 text-lg">${p.followers ? Number(p.followers).toLocaleString() : '0'}</p>
+                                    <p id="followers-count" class="font-bold text-gray-200 text-lg">0</p>
                                     <p class="text-sm">Followers</p>
                                 </div>
                                 <div>
-                                    <p class="font-bold text-gray-200 text-lg">${p.following ? Number(p.following).toLocaleString() : '0'}</p>
+                                    <p id="following-count" class="font-bold text-gray-200 text-lg">0</p>
                                     <p class="text-sm">Following</p>
                                 </div>
                             </div>
@@ -265,7 +277,7 @@
                         </div>
                     </div>
                 </div>`;
-
+            
             ui.containers.profile.innerHTML = profileCard;
             ui.containers.offlineProfile.innerHTML = profileCard;
         }
@@ -273,7 +285,15 @@
         function processEvent(data) {
             let html, container, isComment = false, user = `<span class="font-semibold text-gray-400">${data.user || 'Someone'}</span>`;
             switch (data.type) {
-                case 'profile_info': renderProfile(data.data); return;
+                case 'profile_info':
+                    renderProfile(data.data);
+                    animateValue('followers-count', data.data.followers || 0);
+                    animateValue('following-count', data.data.following || 0);
+                    return;
+                case 'stats_update':
+                    animateValue('followers-count', data.data.followers || 0);
+                    animateValue('following-count', data.data.following || 0);
+                    return;
                 case 'status_update':
                     switchView(data.status === 'live' ? 'live' : 'offline');
                     if (data.status === 'offline') {
@@ -290,7 +310,7 @@
                     return;
                 case 'room_info_update': ui.containers.room.innerHTML = `<pre class="text-xs text-gray-400 whitespace-pre-wrap break-all">${JSON.stringify(data.data, null, 2)}</pre>`; return;
                 case 'gift_info_update': ui.containers.gift.innerHTML = `<pre class="text-xs text-gray-400 whitespace-pre-wrap break-all">${JSON.stringify(data.data, null, 2)}</pre>`; return;
-                case 'total_likes_update': animateCount(data.count); return;
+                case 'total_likes_update': animateValue('total-likes-count', data.count); return;
                 case 'like':
                     container = ui.containers.like;
                     html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="font-medium text-xs"><i class="fa-solid fa-heart text-red-500 w-4 text-center"></i> ${user} sent ${data.count} like(s)!</p></div>`;
@@ -346,7 +366,7 @@
 
         ui.activity.filterDropdown.addEventListener('click', (e) => {
             e.preventDefault();
-            const filter = e.target.closest('a').dataset.filter;
+            const filter = e.target.closest('a')?.dataset.filter;
             if (filter) {
                 activityFilterMode = filter;
                 filterActivity();
@@ -367,9 +387,9 @@
             Object.values(ui.containers).forEach(c => { if (c) c.innerHTML = ''; });
             ['room', 'gift'].forEach(key => ui.containers[key].innerHTML = '<pre class="text-xs text-gray-400">Awaiting Info...</pre>');
             ui.containers.profile.innerHTML = '<p class="text-center italic text-gray-500 pt-4">Awaiting data...</p>';
+            Object.keys(animationFrameIds).forEach(id => cancelAnimationFrame(animationFrameIds[id]));
+            animatedValues = { 'total-likes-count': 0, 'followers-count': 0, 'following-count': 0 };
             ui.totalLikesCount.textContent = '0';
-            currentTotalLikes = 0;
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
         }
 
         function connect() {

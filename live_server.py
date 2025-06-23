@@ -85,7 +85,7 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
         if client.room_info:
             await send_json_safe(websocket, {"type": "room_info_update", "data": client.room_info})
         if client.gift_info:
-                await send_json_safe(websocket, {"type": "gift_info_update", "data": client.gift_info})
+              await send_json_safe(websocket, {"type": "gift_info_update", "data": client.gift_info})
         await send_json_safe(websocket, {"type": "status_update", "status": "live"})
         await send_json_safe(websocket, {"type": "system_status", "status": "Connected & Listening", "level": "live"})
 

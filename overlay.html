@@ -76,6 +76,22 @@
                     <span class="font-semibold text-lg text-white">Enable TTS</span>
                     <label class="form-switch"><input type="checkbox" id="tts-enabled-toggle"><span class="slider"></span></label>
                 </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-white mb-3">TTS Status</h3>
+                    <div class="space-y-3 p-4 rounded-lg bg-zinc-800 text-sm">
+                        <div>
+                            <span class="font-medium text-zinc-400">Now Playing:</span>
+                            <p id="settings-tts-playing" class="text-sky-300 italic min-h-[1.25rem]">None</p>
+                        </div>
+                         <div>
+                            <span class="font-medium text-zinc-400">Queue (<span id="settings-tts-queue-count">0</span>/20):</span>
+                            <div id="settings-tts-queue-list" class="mt-2 p-2 bg-zinc-900 rounded-md max-h-32 overflow-y-auto custom-scrollbar">
+                                <p class="text-zinc-500 italic">Queue is empty.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div>
                     <h3 class="text-lg font-semibold text-white mb-3">Announce Events</h3>
@@ -112,10 +128,6 @@
         <div id="status-bar" class="flex-shrink-0 glass-card p-3 rounded-lg flex justify-between items-center">
             <p id="tracking-status" class="font-semibold text-gray-300"></p>
             <div class="flex items-center gap-4">
-                 <div id="tts-status-container" class="text-right">
-                    <p id="tts-status-playing" class="text-xs text-sky-300 truncate max-w-xs"></p>
-                    <p id="tts-status-queue" class="text-xs text-zinc-400"></p>
-                </div>
                 <p id="connection-status" class="font-semibold text-sm"></p>
                 <button id="settings-button" class="text-zinc-400 hover:text-white transition-colors"><i class="fa-solid fa-cog fa-lg"></i></button>
             </div>
@@ -203,11 +215,12 @@
                     follow: document.getElementById('tts-template-follow'),
                     share: document.getElementById('tts-template-share'),
                     join: document.getElementById('tts-template-join'),
+                },
+                ttsStatus: {
+                    playing: document.getElementById('settings-tts-playing'),
+                    queueCount: document.getElementById('settings-tts-queue-count'),
+                    queueList: document.getElementById('settings-tts-queue-list')
                 }
-            },
-            ttsStatus: {
-                playing: document.getElementById('tts-status-playing'),
-                queue: document.getElementById('tts-status-queue')
             }
         };
 
@@ -264,15 +277,30 @@
             ui.settings.panel.classList.add('hidden');
         }
         
-        function updateTTSStatusUI(playingText = null) {
-            ui.ttsStatus.playing.textContent = playingText ? `Playing: ${playingText}` : (isSpeaking ? 'Playing...' : '');
-            ui.ttsStatus.queue.textContent = `Queue: ${ttsQueue.length}`;
+        function updateSettingsTTSStatusUI(playingText = null) {
+            ui.settings.ttsStatus.playing.textContent = playingText || (isSpeaking ? ui.settings.ttsStatus.playing.textContent : 'None');
+            ui.settings.ttsStatus.playing.classList.toggle('italic', !playingText && !isSpeaking);
+            
+            ui.settings.ttsStatus.queueCount.textContent = ttsQueue.length;
+            const queueList = ui.settings.ttsStatus.queueList;
+            queueList.innerHTML = '';
+            if (ttsQueue.length === 0) {
+                queueList.innerHTML = '<p class="text-zinc-500 italic">Queue is empty.</p>';
+            } else {
+                ttsQueue.forEach(text => {
+                    const p = document.createElement('p');
+                    p.textContent = text;
+                    p.className = 'text-gray-300 truncate';
+                    queueList.appendChild(p);
+                });
+            }
         }
 
         async function playTTS(text) {
             if (!ttsSettings.apiKey || !ttsSettings.voiceId) {
                 console.error("TTS Error: API Key or Voice ID is missing.");
                 isSpeaking = false;
+                updateSettingsTTSStatusUI();
                 processTTSQueue();
                 return;
             }
@@ -289,13 +317,13 @@
                 audio.play();
                 audio.onended = () => {
                     isSpeaking = false;
-                    updateTTSStatusUI();
+                    updateSettingsTTSStatusUI();
                     processTTSQueue();
                 };
             } catch (error) {
                 console.error("Failed to play TTS:", error);
                 isSpeaking = false;
-                updateTTSStatusUI();
+                updateSettingsTTSStatusUI();
                 processTTSQueue();
             }
         }
@@ -304,22 +332,28 @@
             if (isSpeaking || ttsQueue.length === 0) return;
             isSpeaking = true;
             const text = ttsQueue.shift();
-            updateTTSStatusUI(text);
+            updateSettingsTTSStatusUI(text);
             playTTS(text);
         }
         
-        function addToTTSQueue(text, type) {
-            if (!ttsSettings.enabled || !ttsSettings.announce[type] || ttsQueue.length >= MAX_TTS_QUEUE_LENGTH) return;
-            let template = ttsSettings.templates[type] || '';
+        function addToTTSQueue(data, type) {
+            if (!ttsSettings.enabled || !ttsSettings.announce[type]) return;
+            
+            const template = ttsSettings.templates[type];
+            if (!template) return;
+            
             const formattedText = template
-                .replace('{user}', text.user || '')
-                .replace('{comment}', text.comment || '')
-                .replace('{count}', text.count || '')
-                .replace('{gift_name}', text.gift_name || '');
+                .replace('{user}', data.user || '')
+                .replace('{comment}', data.comment || '')
+                .replace('{count}', data.count || '')
+                .replace('{gift_name}', data.gift_name || '');
 
-            if(formattedText) {
+            if (formattedText) {
+                if (ttsQueue.length >= MAX_TTS_QUEUE_LENGTH) {
+                    ttsQueue.shift();
+                }
                 ttsQueue.push(formattedText);
-                updateTTSStatusUI();
+                updateSettingsTTSStatusUI();
                 processTTSQueue();
             }
         }
@@ -395,7 +429,9 @@
 
         function processEvent(data) {
             let html, container, isComment = false, user = `<span class="font-semibold text-gray-400">${data.user || 'Someone'}</span>`;
-            addToTTSQueue(data, data.type);
+            if (data.type !== 'system_status') {
+                addToTTSQueue(data, data.type);
+            }
             switch (data.type) {
                 case 'profile_info': renderProfile(data.data); return;
                 case 'status_update':

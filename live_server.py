@@ -34,8 +34,7 @@ def parse_live_profile_data(data: Any) -> Dict[str, Any]:
             "avatar": avatar_thumb.get('url_list', [None])[0] if avatar_thumb else None,
             "followers": follow_info.get('follower_count', 0),
             "following": follow_info.get('following_count', 0),
-            "bio": data.get('bio_description', '').replace('\n', ' '),
-            "likes": data.get("like_count", 0)
+            "bio": data.get('bio_description', '').replace('\n', ' ')
         }
     return {}
 
@@ -76,9 +75,13 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
         logging.info(f"Connected to @{client.unique_id}'s live stream.")
         owner = client.room_info.get('owner')
         profile_data = parse_live_profile_data(owner) if owner else {}
+
         if profile_data:
             await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
-            await send_json_safe(websocket, {"type": "total_likes_update", "count": profile_data.get("likes", 0)})
+
+        initial_likes = client.room_info.get('like_count', 0)
+        await send_json_safe(websocket, {"type": "total_likes_update", "count": initial_likes})
+
         if client.room_info:
             await send_json_safe(websocket, {"type": "room_info_update", "data": client.room_info})
         if client.gift_info:
@@ -118,10 +121,13 @@ async def handle_offline_user(username: str, websocket: WebSocket):
     await send_json_safe(websocket, {"type": "system_status", "status": f"User is offline. Scraping profile...", "level": "info"})
     profile_data = await get_user_profile_from_web(username)
     if not profile_data:
-        profile_data = {"nickname": username, "username": username}
+        profile_data = {"nickname": username, "username": username, "likes": 0}
         await send_json_safe(websocket, {"type": "system_status", "status": f"Could not retrieve profile for @{username}.", "level": "error"})
     
+    total_likes = profile_data.pop("likes", 0)
+
     await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
+    await send_json_safe(websocket, {"type": "total_likes_update", "count": total_likes})
     await send_json_safe(websocket, {"type": "status_update", "status": "offline"})
 
 @app.get("/")

@@ -15,8 +15,6 @@ import uvicorn
 from typing import Any, Dict
 from html import escape
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - [%(funcName)s] - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-
 app = FastAPI()
 
 async def send_json_safe(websocket: WebSocket, data: Dict[str, Any]):
@@ -37,6 +35,7 @@ def parse_live_profile_data(data: Any) -> Dict[str, Any]:
             "followers": follow_info.get('follower_count', 0),
             "following": follow_info.get('following_count', 0),
             "bio": data.get('bio_description', '').replace('\n', ' '),
+            "likes": data.get("like_count", 0)
         }
     return {}
 
@@ -49,7 +48,7 @@ async def get_user_profile_from_web(username: str) -> Dict[str, Any] | None:
             soup = BeautifulSoup(response.text, "html.parser")
             script_tag = soup.find('script', id='__UNIVERSAL_DATA_FOR_REHYDRATION__')
             if not script_tag: return None
-
+            
             data = json.loads(script_tag.string)
             user_data_path = data.get('__DEFAULT_SCOPE__', {}).get('webapp.user-detail', {})
             if not user_data_path or not user_data_path.get('userInfo'): return None
@@ -57,7 +56,7 @@ async def get_user_profile_from_web(username: str) -> Dict[str, Any] | None:
             user_info = user_data_path['userInfo']
             user = user_info.get('user', {})
             stats = user_info.get('stats', {})
-
+            
             return {
                 "nickname": user.get("nickname", username),
                 "username": user.get("uniqueId", username),
@@ -65,6 +64,7 @@ async def get_user_profile_from_web(username: str) -> Dict[str, Any] | None:
                 "followers": stats.get("followerCount", 0),
                 "following": stats.get("followingCount", 0),
                 "bio": user.get("signature", "Bio not available.").replace('\n', ' '),
+                "likes": stats.get("heartCount", 0)
             }
     except Exception as e:
         logging.error(f"Exception during web scraping for @{username}: {e}")
@@ -78,6 +78,7 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
         profile_data = parse_live_profile_data(owner) if owner else {}
         if profile_data:
             await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
+            await send_json_safe(websocket, {"type": "total_likes_update", "count": profile_data.get("likes", 0)})
         if client.room_info:
             await send_json_safe(websocket, {"type": "room_info_update", "data": client.room_info})
         if client.gift_info:
@@ -90,7 +91,6 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
 
     event_handlers = {
         CommentEvent: lambda e: {"type": "comment", "user": e.user.unique_id, "comment": e.comment},
-        LikeEvent: lambda e: {"type": "like", "user": e.user.unique_id, "count": e.count},
         FollowEvent: lambda e: {"type": "follow", "user": e.user.unique_id},
         ShareEvent: lambda e: {"type": "share", "user": e.user.unique_id},
         JoinEvent: lambda e: {"type": "join", "user": e.user.unique_id},
@@ -100,6 +100,12 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
     }
     for event, func in event_handlers.items():
         client.add_listener(event, lambda e, f=func: asyncio.create_task(forward_event(f(e))))
+
+    @client.on(LikeEvent)
+    async def on_like(event: LikeEvent):
+        await forward_event({"type": "like", "user": event.user.unique_id, "count": event.count})
+        if event.total is not None:
+            await forward_event({"type": "total_likes_update", "count": event.total})
 
     @client.on(GiftEvent)
     async def on_gift(event: GiftEvent):
@@ -114,7 +120,7 @@ async def handle_offline_user(username: str, websocket: WebSocket):
     if not profile_data:
         profile_data = {"nickname": username, "username": username}
         await send_json_safe(websocket, {"type": "system_status", "status": f"Could not retrieve profile for @{username}.", "level": "error"})
-
+    
     await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
     await send_json_safe(websocket, {"type": "status_update", "status": "offline"})
 
@@ -220,7 +226,7 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
             tiktok_task = asyncio.create_task(handle_tiktok_events(client, websocket))
         else:
             tiktok_task = asyncio.create_task(handle_offline_user(username, websocket))
-
+        
         while True:
             await websocket.receive_text()
 
@@ -236,6 +242,4 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
         logging.info(f"Connection closed and tasks cleaned up for @{username}.")
 
 if __name__ == "__main__":
-    from uvicorn.config import LOGGING_CONFIG
-    LOGGING_CONFIG["formatters"]["default"]["fmt"] = "%(asctime)s - %(levelname)s - %(message)s"
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning")

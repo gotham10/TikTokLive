@@ -80,10 +80,11 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
         profile_data = parse_live_profile_data(owner) if owner else {}
         if profile_data:
             await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
+            await send_json_safe(websocket, {"type": "total_likes_update", "count": profile_data.get("likes", 0)})
         if client.room_info:
             await send_json_safe(websocket, {"type": "room_info_update", "data": client.room_info})
         if client.gift_info:
-              await send_json_safe(websocket, {"type": "gift_info_update", "data": client.gift_info})
+             await send_json_safe(websocket, {"type": "gift_info_update", "data": client.gift_info})
         await send_json_safe(websocket, {"type": "status_update", "status": "live"})
         await send_json_safe(websocket, {"type": "system_status", "status": "Connected & Listening", "level": "live"})
 

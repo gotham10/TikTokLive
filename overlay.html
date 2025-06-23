@@ -253,6 +253,12 @@
             info: '<i class="fa-solid fa-magnifying-glass text-sky-400 mr-2"></i>'
         };
 
+        function filterTTSQueue() {
+            ttsQueue = ttsQueue.filter(item => ttsSettings.announce[item.type]);
+            const currentlyPlayingItem = isSpeaking ? ui.settings.ttsStatus.playing.textContent : null;
+            updateSettingsTTSStatusUI(currentlyPlayingItem);
+        }
+
         function loadSettings() {
             const savedSettings = localStorage.getItem('ttsSettings');
             ttsSettings = savedSettings ? { ...defaultTTSSettings, ...JSON.parse(savedSettings) } : defaultTTSSettings;
@@ -273,6 +279,7 @@
                 ttsSettings.announce[event] = ui.settings.announce[event].checked;
                 ttsSettings.templates[event] = ui.settings.templates[event].value;
             }
+            filterTTSQueue();
             localStorage.setItem('ttsSettings', JSON.stringify(ttsSettings));
             new Audio(silentAudio).play().catch(e => {});
             ui.settings.panel.classList.add('hidden');
@@ -282,8 +289,10 @@
             const statusEl = ui.settings.ttsStatus.playing;
             if (statusText) {
                 statusEl.textContent = statusText;
-                statusEl.classList.toggle('text-red-400', statusText.toLowerCase().includes('error') || statusText.toLowerCase().includes('blocked'));
-                statusEl.classList.remove('italic', 'text-sky-300');
+                const isError = statusText.toLowerCase().includes('error') || statusText.toLowerCase().includes('blocked');
+                statusEl.classList.toggle('text-red-400', isError);
+                statusEl.classList.toggle('text-sky-300', !isError);
+                statusEl.classList.remove('italic');
             } else {
                 statusEl.textContent = 'None';
                 statusEl.className = 'text-sky-300 italic min-h-[1.25rem]';
@@ -295,9 +304,9 @@
             if (ttsQueue.length === 0) {
                 queueList.innerHTML = '<p class="text-zinc-500 italic">Queue is empty.</p>';
             } else {
-                ttsQueue.forEach(text => {
+                ttsQueue.forEach(item => {
                     const p = document.createElement('p');
-                    p.textContent = text;
+                    p.textContent = item.text;
                     p.className = 'text-gray-300 truncate';
                     queueList.appendChild(p);
                 });
@@ -339,11 +348,9 @@
         function processTTSQueue() {
             if (isSpeaking || ttsQueue.length === 0) return;
             isSpeaking = true;
-            const text = ttsQueue.shift();
-            ui.settings.ttsStatus.playing.textContent = text;
-            ui.settings.ttsStatus.playing.className = 'text-sky-300 min-h-[1.25rem]';
-            updateSettingsTTSStatusUI(text);
-            playTTS(text);
+            const item = ttsQueue.shift();
+            updateSettingsTTSStatusUI(item.text);
+            playTTS(item.text);
         }
         
         function addToTTSQueue(data, type) {
@@ -356,8 +363,9 @@
                 .replace(/{count}/g, data.count)
                 .replace(/{gift_name}/g, data.gift_name);
             if (formattedText) {
-                ttsQueue.push(formattedText);
-                updateSettingsTTSStatusUI(isSpeaking ? ui.settings.ttsStatus.playing.textContent : null);
+                ttsQueue.push({ text: formattedText, type: type });
+                const currentlyPlayingItem = isSpeaking ? ui.settings.ttsStatus.playing.textContent : null;
+                updateSettingsTTSStatusUI(currentlyPlayingItem);
                 processTTSQueue();
             }
         }
@@ -517,7 +525,10 @@
                 });
             });
             ui.settings.openBtn.addEventListener('click', () => ui.settings.panel.classList.remove('hidden'));
-            ui.settings.closeBtn.addEventListener('click', () => ui.settings.panel.classList.add('hidden'));
+            ui.settings.closeBtn.addEventListener('click', () => {
+                loadSettings(); 
+                ui.settings.panel.classList.add('hidden');
+            });
             ui.settings.saveBtn.addEventListener('click', saveSettings);
         }
 

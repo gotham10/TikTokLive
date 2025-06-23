@@ -92,13 +92,24 @@
             <div class="col-span-1 row-span-1 flex flex-col bg-zinc-900 rounded-lg p-3">
                 <div class="flex justify-between items-center text-lg font-bold text-gray-200 mb-2 border-b border-zinc-800 pb-2">
                     <h2>Likes</h2>
-                    <p class="text-sm text-gray-400 font-medium"><span id="total-likes-count" class="font-bold text-gray-200"></span></p>
                 </div>
                 <div id="like-container" class="flex-grow overflow-y-auto space-y-2 custom-scrollbar pr-2"></div>
             </div>
             
             <div class="col-span-1 row-span-1 flex flex-col bg-zinc-900 rounded-lg p-3">
-                <h2 class="text-lg font-bold text-gray-200 mb-2 border-b border-zinc-800 pb-2">Activity Feed</h2>
+                 <div class="flex justify-between items-center text-lg mb-2 border-b border-zinc-800 pb-2">
+                    <h2 class="font-bold text-gray-200">Activity Feed</h2>
+                    <div class="relative">
+                        <select id="activity-filter" class="bg-zinc-800 text-gray-300 text-xs rounded-md px-2 py-1 border border-zinc-700 focus:outline-none focus:ring-1 focus:ring-sky-500">
+                            <option value="all">All Activity</option>
+                            <option value="follow">Follows</option>
+                            <option value="share">Shares</option>
+                            <option value="join">Joins</option>
+                            <option value="gift">Gifts</option>
+                            <option value="subscribe">Subscriptions</option>
+                        </select>
+                    </div>
+                </div>
                 <div id="activity-container" class="flex-grow overflow-y-auto space-y-2 custom-scrollbar pr-2"></div>
             </div>
         </div>
@@ -135,12 +146,9 @@
                 filterButton: document.getElementById('chat-filter-button'),
                 filterIcon: document.getElementById('chat-filter-icon'),
             },
-            totalLikesCount: document.getElementById('total-likes-count'),
         };
 
         let chatFilterMode = 'message';
-        let currentTotalLikes = 0;
-        let animationFrameId;
         let keepAliveInterval;
 
         const statusIcons = {
@@ -159,34 +167,7 @@
             viewToShow.style.display = 'flex';
         }
 
-        function animateCount(targetValue) {
-            const endValue = Number(String(targetValue).replace(/[^\d]/g, ''));
-            const startValue = currentTotalLikes;
-            if (isNaN(endValue) || startValue === endValue) {
-                if(!isNaN(endValue)) ui.totalLikesCount.textContent = endValue.toLocaleString();
-                return;
-            };
-
-            const duration = 500;
-            let startTime = null;
-            
-            const step = timestamp => {
-                if (!startTime) startTime = timestamp;
-                const progress = Math.min((timestamp - startTime) / duration, 1);
-                const current = Math.floor(progress * (endValue - startValue) + startValue);
-                ui.totalLikesCount.textContent = current.toLocaleString();
-                if (progress < 1) {
-                    animationFrameId = requestAnimationFrame(step);
-                } else {
-                    currentTotalLikes = endValue;
-                    ui.totalLikesCount.textContent = endValue.toLocaleString();
-                }
-            };
-            cancelAnimationFrame(animationFrameId);
-            animationFrameId = requestAnimationFrame(step);
-        }
-
-        function addEvent(container, htmlContent, isComment = false) {
+        function addEvent(container, htmlContent) {
             const wrapper = document.createElement('div');
             wrapper.innerHTML = htmlContent;
             const newEvent = wrapper.firstElementChild;
@@ -194,7 +175,12 @@
                 newEvent.classList.add('event-card');
                 container.appendChild(newEvent);
                 container.scrollTop = container.scrollHeight;
-                if(isComment) filterChat();
+
+                if (container.id === 'comment-container') {
+                    filterChat();
+                } else if (container.id === 'activity-container') {
+                    filterActivity();
+                }
             }
         }
         
@@ -228,11 +214,10 @@
             
             ui.containers.profile.innerHTML = profileCard;
             ui.containers.offlineProfile.innerHTML = profileCard;
-            if(p.likes) animateCount(p.likes);
         }
 
         function processEvent(data) {
-            let html, container, isComment = false, user = `<span class="font-semibold text-gray-400">${data.user || 'Someone'}</span>`;
+            let html, container, user = `<span class="font-semibold text-gray-400">${data.user || 'Someone'}</span>`;
             switch (data.type) {
                 case 'profile_info': renderProfile(data.data); return;
                 case 'status_update':
@@ -251,26 +236,25 @@
                     return;
                 case 'room_info_update': ui.containers.room.innerHTML = `<pre class="text-xs text-gray-400 whitespace-pre-wrap break-all">${JSON.stringify(data.data, null, 2)}</pre>`; return;
                 case 'gift_info_update': ui.containers.gift.innerHTML = `<pre class="text-xs text-gray-400 whitespace-pre-wrap break-all">${JSON.stringify(data.data, null, 2)}</pre>`; return;
-                case 'total_likes_update': animateCount(data.count); return;
                 case 'like': 
                     container = ui.containers.like; 
                     html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="font-medium text-xs"><i class="fa-solid fa-heart text-red-500 w-4 text-center"></i> ${user} sent ${data.count} like(s)!</p></div>`; 
                     break;
                 case 'comment': 
                     container = ui.containers.comment;
-                    isComment = true;
                     html = `<div class="bg-zinc-800/50 p-2 rounded-md" data-user="${data.user || ''}" data-comment="${data.comment || ''}"><p class="text-sm"><span class="font-bold text-gray-200">${data.user || 'User'}:</span> <span class="text-gray-400">${data.comment}</span></p></div>`; 
                     break;
-                case 'follow': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="text-xs"><i class="fa-solid fa-user-plus text-sky-400 w-4 text-center"></i> ${user} followed!</p></div>`; break;
-                case 'share': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="text-xs"><i class="fa-solid fa-share text-purple-400 w-4 text-center"></i> ${user} shared!</p></div>`; break;
-                case 'join': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="text-xs"><i class="fa-solid fa-right-to-bracket text-gray-400 w-4 text-center"></i> ${user} joined!</p></div>`; break;
-                case 'gift': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md"><p class="text-xs"><i class="fa-solid fa-gift text-orange-400 w-4 text-center"></i> ${user} sent ${data.count}x ${data.gift_name}!</p></div>`; break;
+                case 'follow': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md" data-type="follow"><p class="text-xs"><i class="fa-solid fa-user-plus text-sky-400 w-4 text-center"></i> ${user} followed!</p></div>`; break;
+                case 'share': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md" data-type="share"><p class="text-xs"><i class="fa-solid fa-share text-purple-400 w-4 text-center"></i> ${user} shared!</p></div>`; break;
+                case 'join': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md" data-type="join"><p class="text-xs"><i class="fa-solid fa-right-to-bracket text-gray-400 w-4 text-center"></i> ${user} joined!</p></div>`; break;
+                case 'gift': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md" data-type="gift"><p class="text-xs"><i class="fa-solid fa-gift text-orange-400 w-4 text-center"></i> ${user} sent ${data.count}x ${data.gift_name}!</p></div>`; break;
+                case 'subscribe': container = ui.containers.activity; html = `<div class="bg-zinc-800/50 p-2 rounded-md" data-type="subscribe"><p class="text-xs"><i class="fa-solid fa-star text-yellow-400 w-4 text-center"></i> ${user} subscribed!</p></div>`; break;
                 case 'system_status':
                     ui.status.connection.innerHTML = `<span>${statusIcons[data.level] || ''}${data.status}</span>`;
                     return;
                 default: return;
             }
-            if (container) addEvent(container, html, isComment);
+            if (container) addEvent(container, html);
         }
         
         function filterChat() {
@@ -283,6 +267,18 @@
                 comment.style.display = isVisible ? 'block' : 'none';
             });
         }
+
+        function filterActivity() {
+            const filterValue = document.getElementById('activity-filter').value;
+            const activities = ui.containers.activity.querySelectorAll('div[data-type]');
+            activities.forEach(activity => {
+                const type = activity.dataset.type;
+                const isVisible = (filterValue === 'all' || type === filterValue);
+                activity.style.display = isVisible ? 'block' : 'none';
+            });
+        }
+
+        document.getElementById('activity-filter').addEventListener('change', filterActivity);
 
         ui.chat.input.addEventListener('input', filterChat);
         ui.chat.filterButton.addEventListener('click', () => {
@@ -305,9 +301,6 @@
             Object.values(ui.containers).forEach(c => { if (c) c.innerHTML = ''; });
             ['room', 'gift'].forEach(key => ui.containers[key].innerHTML = '<pre class="text-xs text-gray-400">Awaiting Info...</pre>');
             ui.containers.profile.innerHTML = '<p class="text-center italic text-gray-500 pt-4">Awaiting data...</p>';
-            ui.totalLikesCount.textContent = '0';
-            currentTotalLikes = 0;
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
         }
 
         function connect() {

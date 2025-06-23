@@ -85,7 +85,7 @@
                             <p id="settings-tts-playing" class="text-sky-300 italic min-h-[1.25rem]">None</p>
                         </div>
                          <div>
-                            <span class="font-medium text-zinc-400">Queue (<span id="settings-tts-queue-count">0</span>/20):</span>
+                            <span class="font-medium text-zinc-400">Queue (<span id="settings-tts-queue-count">0</span>):</span>
                             <div id="settings-tts-queue-list" class="mt-2 p-2 bg-zinc-900 rounded-md max-h-32 overflow-y-auto custom-scrollbar">
                                 <p class="text-zinc-500 italic">Queue is empty.</p>
                             </div>
@@ -226,7 +226,7 @@
 
         let chatFilterMode = 'message', activityFilterMode = 'all', currentTotalLikes = 0, animationFrameId, keepAliveInterval;
         let ttsQueue = [], isSpeaking = false, ttsSettings = {};
-        const MAX_TTS_QUEUE_LENGTH = 20;
+        const silentAudio = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
 
         const defaultTTSSettings = {
             apiKey: '',
@@ -274,12 +274,20 @@
                 ttsSettings.templates[event] = ui.settings.templates[event].value;
             }
             localStorage.setItem('ttsSettings', JSON.stringify(ttsSettings));
+            new Audio(silentAudio).play().catch(e => {});
             ui.settings.panel.classList.add('hidden');
         }
         
-        function updateSettingsTTSStatusUI(playingText = null) {
-            ui.settings.ttsStatus.playing.textContent = playingText || (isSpeaking ? ui.settings.ttsStatus.playing.textContent : 'None');
-            ui.settings.ttsStatus.playing.classList.toggle('italic', !playingText && !isSpeaking);
+        function updateSettingsTTSStatusUI(statusText = null) {
+            const statusEl = ui.settings.ttsStatus.playing;
+            if (statusText) {
+                statusEl.textContent = statusText;
+                statusEl.classList.toggle('text-red-400', statusText.toLowerCase().includes('error') || statusText.toLowerCase().includes('blocked'));
+                statusEl.classList.remove('italic', 'text-sky-300');
+            } else {
+                statusEl.textContent = 'None';
+                statusEl.className = 'text-sky-300 italic min-h-[1.25rem]';
+            }
             
             ui.settings.ttsStatus.queueCount.textContent = ttsQueue.length;
             const queueList = ui.settings.ttsStatus.queueList;
@@ -298,10 +306,9 @@
 
         async function playTTS(text) {
             if (!ttsSettings.apiKey || !ttsSettings.voiceId) {
-                console.error("TTS Error: API Key or Voice ID is missing.");
                 isSpeaking = false;
-                updateSettingsTTSStatusUI();
-                processTTSQueue();
+                updateSettingsTTSStatusUI('API Error: Key or Voice ID missing.');
+                setTimeout(processTTSQueue, 1000);
                 return;
             }
             const url = `https://api.elevenlabs.io/v1/text-to-speech/${ttsSettings.voiceId}`;
@@ -314,17 +321,18 @@
                 if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
                 const blob = await response.blob();
                 const audio = new Audio(URL.createObjectURL(blob));
-                audio.play();
                 audio.onended = () => {
                     isSpeaking = false;
                     updateSettingsTTSStatusUI();
                     processTTSQueue();
                 };
+                await audio.play();
             } catch (error) {
-                console.error("Failed to play TTS:", error);
+                console.error("TTS Error:", error);
+                const errorText = error.message.includes('API Error') ? 'API Error. Check key or voice ID.' : 'Playback blocked. Click page to unmute.';
+                updateSettingsTTSStatusUI(errorText);
                 isSpeaking = false;
-                updateSettingsTTSStatusUI();
-                processTTSQueue();
+                setTimeout(processTTSQueue, 1000);
             }
         }
         
@@ -332,28 +340,24 @@
             if (isSpeaking || ttsQueue.length === 0) return;
             isSpeaking = true;
             const text = ttsQueue.shift();
+            ui.settings.ttsStatus.playing.textContent = text;
+            ui.settings.ttsStatus.playing.className = 'text-sky-300 min-h-[1.25rem]';
             updateSettingsTTSStatusUI(text);
             playTTS(text);
         }
         
         function addToTTSQueue(data, type) {
-            if (!ttsSettings.enabled || !ttsSettings.announce[type]) return;
-            
+            if (!ttsSettings.enabled || !ttsSettings.announce[type] || !data.user) return;
             const template = ttsSettings.templates[type];
             if (!template) return;
-            
             const formattedText = template
-                .replace('{user}', data.user || '')
-                .replace('{comment}', data.comment || '')
-                .replace('{count}', data.count || '')
-                .replace('{gift_name}', data.gift_name || '');
-
+                .replace(/{user}/g, data.user)
+                .replace(/{comment}/g, data.comment)
+                .replace(/{count}/g, data.count)
+                .replace(/{gift_name}/g, data.gift_name);
             if (formattedText) {
-                if (ttsQueue.length >= MAX_TTS_QUEUE_LENGTH) {
-                    ttsQueue.shift();
-                }
                 ttsQueue.push(formattedText);
-                updateSettingsTTSStatusUI();
+                updateSettingsTTSStatusUI(isSpeaking ? ui.settings.ttsStatus.playing.textContent : null);
                 processTTSQueue();
             }
         }
@@ -429,7 +433,7 @@
 
         function processEvent(data) {
             let html, container, isComment = false, user = `<span class="font-semibold text-gray-400">${data.user || 'Someone'}</span>`;
-            if (data.type !== 'system_status') {
+            if (data.type !== 'system_status' && data.type !== 'total_likes_update') {
                 addToTTSQueue(data, data.type);
             }
             switch (data.type) {

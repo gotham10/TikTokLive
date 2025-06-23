@@ -56,6 +56,22 @@ async def get_user_profile_from_web(username: str) -> Dict[str, Any] | None:
     except Exception:
         return None
 
+def parse_live_profile_data(owner_data: Any) -> Dict[str, Any]:
+    if not isinstance(owner_data, dict):
+        return {}
+    
+    follow_info = owner_data.get('follow_info', {})
+    avatar_thumb = owner_data.get('avatar_thumb', {})
+    
+    return {
+        "nickname": owner_data.get('nickname', 'N/A'),
+        "username": owner_data.get('display_id', 'N/A'),
+        "avatar": (avatar_thumb.get('url_list', [None]) or [None])[0],
+        "followers": follow_info.get('follower_count', 0),
+        "following": follow_info.get('following_count', 0),
+        "bio": owner_data.get('bio_description', '').replace('\n', ' ')
+    }
+
 async def periodic_stats_updater(client: TikTokLiveClient, websocket: WebSocket, username: str):
     while client.connected:
         try:
@@ -75,6 +91,19 @@ async def periodic_stats_updater(client: TikTokLiveClient, websocket: WebSocket,
         except Exception:
             break
 
+async def handle_offline_user(username: str, websocket: WebSocket):
+    await send_json_safe(websocket, {"type": "system_status", "status": "User is offline. Scraping profile...", "level": "info"})
+    profile_data = await get_user_profile_from_web(username)
+    
+    if profile_data:
+        await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
+        await send_json_safe(websocket, {"type": "total_likes_update", "count": profile_data.get("likes", 0)})
+    else:
+        await send_json_safe(websocket, {"type": "system_status", "status": f"Could not retrieve profile for @{username}.", "level": "error"})
+        await send_json_safe(websocket, {"type": "profile_info", "data": {"nickname": username, "username": username}})
+        
+    await send_json_safe(websocket, {"type": "status_update", "status": "offline"})
+
 async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
     clean_username = client.unique_id.replace('@','')
     
@@ -87,21 +116,17 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
         if room_info:
             await send_json_safe(websocket, {"type": "room_info_update", "data": room_info})
             
-            live_likes = room_info.get('like_count', None)
-            if live_likes is not None:
-                await send_json_safe(websocket, {"type": "total_likes_update", "count": live_likes})
-            
             owner = room_info.get('owner')
-            if owner:
-                follow_info = owner.get('follow_info', {})
-                stats_data = {
-                    "followers": follow_info.get('follower_count', 0),
-                    "following": follow_info.get('following_count', 0),
+            profile_data = parse_live_profile_data(owner)
+            if profile_data:
+                await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
+                last_known_stats[clean_username] = {
+                    "followers": profile_data.get("followers", 0),
+                    "following": profile_data.get("following", 0)
                 }
-                current_stats = last_known_stats.get(clean_username, {})
-                if stats_data["followers"] != current_stats.get("followers") or stats_data["following"] != current_stats.get("following"):
-                    await send_json_safe(websocket, {"type": "stats_update", "data": stats_data})
-                    last_known_stats[clean_username] = stats_data
+
+            live_likes = room_info.get('like_count', 0)
+            await send_json_safe(websocket, {"type": "total_likes_update", "count": live_likes})
 
         if client.gift_info:
             await send_json_safe(websocket, {"type": "gift_info_update", "data": client.gift_info})
@@ -219,7 +244,7 @@ async def get_overlay_for_user(username: str):
         else:
             html_content = html_content.replace("__PAGE_TITLE__", f"@{username} | TikTok API Tracker")
             html_content = html_content.replace("__PAGE_DESCRIPTION__", "Track any TikTok user's livestream instantly.")
-            html_content = html_content.replace("__PAGE_ICON__", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAMAAAArteDzAAAA/FBMVEUAAAAl8+3/KFj+LFUn8+//MFgl9e4l9O7+LFX+LVX/MFAl9O4l9O79LFYg+e8l9O7+LVX/LFQo9+/9Llf/LVP9K1X9LFQn9e7/K1YHBwf+LFb9LVT/LVYn9O8m9O7+LVYl9O7+LFUm9e79LFUk8u7/MFUAAAAg0cy4MU5tEyUlBw1uXGrWJkkm8+7/LFYcubMg0c0Yop//LVYAAAAl9O7+LFUFHx5gESAg1dB/Fiu+IUCeGzUj5d/uKVBvEyUSenfeJ0uPGTAQAwUJPTwHLi1ACxUCDw8gBgsXmJWuHjsUiYYOXFoexsEbsq3OJEVPDhowCBEQa2gLTEsMTUvQL1NGAAAAM3RSTlMAYCC/QCCfgO9gEL+PgBDv30AgcFCfgG8w6q+gjzDf38/Pr5BQMCDf39/fz8+vgH9wYFAMSP/SAAAC50lEQVRYw+3YZ3eiQBSA4YkUgQjWGNPrZnuFGyEI1liSTd3//192YDF3jG5AmJz9sL5fPfOcCygMkn+aIWJ7vNA1C5NfA13nidpRb3O5HDf03IzyAHLc0clroE2AH9zRngc6d9R0QOCP9jqgcUfNS9C5oZivaNxQzNnliKJa5odiH874odj51wo/FFVbFnmh2HBMb4THcoULij3a9AORE4r1xzZHFHu3vatyRy8AhP8HvWy+AtoEd5QONU43C7IsF8RFKCCbHDXy61ZUfjH65WBytxQqBmIMmpN2wJs07xOiFSRbN1ftjxu7+iKUEMrSbi9ctxOHrhUj8eYhRBwAWIxS9uQAwmLQQkSO+yYtBqU1dEGJQ+VoSro+DsW0ck2txZmtBxOLQePLh6Z9bnJCcWP7E00OaGUf5+SGymhyQytWUB+5e991Xd9Ni+KgV7gFu4CoDKgRHvxwanYBsqF46a+n5i2EKRtVVa1up0Y/B4POzqnUNRKVEg3uI+3pJQpNQSIkG7pnMavCa0QPOisqBr+laNEIaCUtC4qLxtGiO6DVSBYU7yW/mB+RQDihfQZVeaCbzCIfABrZUFyEL0kA848ZRJ2k6CmD9rx59JBBu0lRg0FNF0Bb8DUe4tc4GUr2mV3dyIPy/C2sxfyHADEanrQBviSCPncZrTFzypVkqIj3KJpTmn949fGUJt45FukdGvPV2TnxR2x2KHqS+Plsm0xb342Z7VqL/ZZCOSFqFK3B7OvceiFfOC5Ge7UBO6iyxFaibc6q1lN2YOKgGyRxh62hOdN1xLbaTx+MOkCTkqOVYjQqNnhst6/Zs+LioAlbo6O+nAM4aNLyVy+bzdCsk+XK9+PNElm2b1txx16SyNKd/U3tTUJTeUNSJL1faPoemmnUT83R8yn9DuCxp6sO7l0PxcuuB3/a0Uj6pKPgravrOE530oFppTLJVk2AZwkqyZ5UZdyjepnwqlGr6npVbWhk1apVCfoNtEO7SNpuAb8AAAAASUVORK5CYII=")
+            html_content = html_content.replace("__PAGE_ICON__", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAMAAAArteDzAAAA/FBMVEUAAAAl8+3/KFj+LFUn8+//MFgl9e4l9O7+LFX+LVX/MFAl9O4l9O79LFYg+e8l9O7+LVX/LFQo9+/9Llf/LVP9K1X9LFQn9e7/K1YHBwf+LFb9LVT/LVYn9O8m9O7+LVYl9O7+LFUm9e79LFUk8u7/MFUAAAAg0cy4MU5tEyUlBw1uXGrWJkkm8+7/LFYcubMg0c0Yop//LVYAAAAl9O7+LFUFHx5gESAg1dB/Fiu+IUCeGzUj5d/uKVBvEyUSenfeJ0uPGTAQAwUJPTwHLi1ACxUCDw8gBgsXmJWuHjsUiYYOXFoexsEbsq3OJEVPDhowCBEQa2gLTEsMTUvQL1NGAAAAM3RSTlMAYCC/QCCfgO9gEL+PgBDv30AgcFCfgG8w6q+gjzDf38/Pr5BQMCDf39/fz8+vgH9wYFAMSP/SAAAC50lEQVRYw+3YZ3eiQBSA4YkUgQjWGNPrZnuFGyEI1liSTd3//192YDF3jG5AmJz9sL5fPfOcCygMkn+aIWJ7vNA1C5NfA13nidpRb3O5HDf03IzyAHLc0clroE2AH9zRngc6d9R0QOCP9jqgcUfNS9C5oZivaNxQzNnliKJa5odiH874odj51wo/FFVbFnmh2HBMb4THcoULij3a9AORE4r1xzZHFHu3vatyRy8AhP8HvWy+AtoEd5QONU43C7IsF8RFKCCbHDXy61ZUfjH65WBytxQqBmIMmpN2wJs07xOiFSRbN1ftjxu7+iKUEMrSbi9ctxOHrhUj8eYhRBwAWIxS9uQAwmLQQkSO+yYtBqU1dEGJQ+VoSro+DsW0ck2txZmtBxOLQePLh6Z9bnJCcWP7E00OaGUf5+SGymhyQytWUB+5e991Xd9Ni+KgV7gFu4CoDKgRHvxwanYBsqF46a+n5i2EKRtVVa1up0Y/B4POzqnUNRKVEg3uI+3pJQpNQSIkG7pnMavCa0QPOisqBr+laNEIaCUtC4qLxtGiO6DVSBYU7yW/mB+RQDihfQZVeaCbzCIfABrZUFyEL0kA848ZRJ2k6CmD9rx59JBBu0lRg0FNF0Bb8DUe4tc4GUr2mV3dyIPy/C2sxfyHADEanrQBviSCPncZrTFzypVkqIj3KJpTmn949fGUJt45FukdGvPV2TnxR2x2KHqS+Plsm0xb342Z7VqL/ZZCOSFqFK3B7OvceiFfOC5Ge7UBO6iyxFaibc6q1lN2YOKgGyRxh62hOdN1xLbaTx+MOkCTkqOVYjQqNnhst6/Zs+LioAlbo6O+nAM4aNLyVy+bzdCsk+XK9+PNElm2b1txx16SyNKd/U3tTUJTeUNSJL1faPoemmnUT83R8ym9DuCxp6sO7l0PxcuuB3/a0Uj6pKPgravrOE530oFppTLJVk2AZwkqyZ5UZdyjepnwqlGr6npVbWhk1apVCfoNtEO7SNpuAb8AAAAASUVORK5CYII=")
 
         return HTMLResponse(content=html_content)
     except FileNotFoundError:
@@ -228,33 +253,18 @@ async def get_overlay_for_user(username: str):
 @app.websocket("/ws/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
     await websocket.accept()
-
-    profile_data = await get_user_profile_from_web(username)
     
-    if profile_data:
-        last_known_stats[username] = {
-            "followers": profile_data.get("followers", 0),
-            "following": profile_data.get("following", 0)
-        }
-        total_likes = profile_data.pop("likes", 0)
-        await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
-        await send_json_safe(websocket, {"type": "total_likes_update", "count": total_likes})
-    else:
-        await send_json_safe(websocket, {"type": "system_status", "status": f"Could not retrieve full profile for @{username}.", "level": "warn"})
-        await send_json_safe(websocket, {"type": "profile_info", "data": {"nickname": username, "username": username}})
-
     client = TikTokLiveClient(unique_id=f"@{username.lower()}")
     tiktok_task = None
-    
+
     try:
         is_live = await client.is_live()
+        
         if is_live:
             tiktok_task = asyncio.create_task(handle_tiktok_events(client, websocket))
         else:
-            await send_json_safe(websocket, {"type": "status_update", "status": "offline"})
-            if not profile_data:
-                 await send_json_safe(websocket, {"type": "system_status", "status": "User is offline and profile unavailable.", "level": "error"})
-
+            await handle_offline_user(username, websocket)
+        
         while True:
             await websocket.receive_text()
 

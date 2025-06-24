@@ -11,16 +11,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --color-primary-hue: 260; /* Amethyst */
-            --color-primary: hsl(var(--color-primary-hue), 60%, 60%);
-            --color-primary-glow: hsl(var(--color-primary-hue), 80%, 70%);
-            --color-primary-focus: hsl(var(--color-primary-hue), 70%, 65%);
-            --color-primary-bg: hsl(var(--color-primary-hue), 40%, 15%);
+            --color-primary-h: 260; --color-primary-s: 60%; --color-primary-l: 60%;
+            --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+            --color-primary-glow: hsl(var(--color-primary-h), 80%, 70%);
+            --color-primary-focus: hsl(var(--color-primary-h), 70%, 65%);
         }
-        .theme-emerald { --color-primary-hue: 150; }
-        .theme-amber { --color-primary-hue: 40; }
-        .theme-ruby { --color-primary-hue: 350; }
-        .theme-sapphire { --color-primary-hue: 210; }
+        .theme-amethyst { --color-primary-h: 260; }
+        .theme-emerald { --color-primary-h: 150; }
+        .theme-amber { --color-primary-h: 40; }
+        .theme-ruby { --color-primary-h: 350; }
+        .theme-sapphire { --color-primary-h: 210; }
 
         body { background-color: #111111; font-family: 'Inter', sans-serif; overflow: hidden; color: #a3a3a3; }
         .glowing-avatar { border-color: var(--color-primary); box-shadow: 0 0 15px 2px var(--color-primary-glow); }
@@ -50,15 +50,23 @@
         .gift-card-tier-3 { border-left: 3px solid #3b82f6; }
         .gift-card-tier-4 { border-left: 3px solid #a855f7; }
         .gift-card-tier-5 { border-left: 3px solid #f59e0b; box-shadow: 0 0 15px -2px #f59e0b; }
+        .tab-content, .view { display: none; }
+        .tab-content.active, .view.active { display: flex; }
+        .view { animation-duration: 0.4s; animation-fill-mode: forwards; }
+        .view.fade-in { animation-name: view-fade-in; }
+        .view.fade-out { animation-name: view-fade-out; }
+        @keyframes view-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes view-fade-out { from { opacity: 1; } to { opacity: 0; } }
     </style>
 </head>
 <body class="h-screen bg-black">
-    <div id="loading-view" class="flex flex-col h-full w-full items-center justify-center bg-zinc-900 p-8 text-center">
+    <div id="loading-view" class="view flex-col h-full w-full items-center justify-center bg-zinc-900 p-8 text-center">
         <i class="fa-solid fa-spinner fa-spin fa-3x" style="color: var(--color-primary)"></i>
         <p id="loading-text" class="mt-4 text-xl font-semibold text-gray-300">Connecting...</p>
     </div>
-    <div id="offline-view" class="hidden flex-col h-full w-full items-center justify-center bg-zinc-900 p-8 text-center">
+    <div id="offline-view" class="view flex-col h-full w-full items-center justify-center bg-zinc-900 p-8 text-center">
         <div id="offline-profile-content" class="max-w-md w-full glass-card rounded-2xl p-6 shadow-2xl"></div>
+        <div id="offline-status-message" class="mt-6 text-xl font-bold text-red-400"></div>
     </div>
     <div id="settings-panel" class="settings-panel fixed top-0 right-0 h-full w-full max-w-2xl bg-zinc-900/80 backdrop-blur-xl border-l border-zinc-700 shadow-2xl z-50 flex flex-col">
         <div class="flex-shrink-0 p-6 flex justify-between items-center border-b border-zinc-800">
@@ -74,6 +82,10 @@
                     <span data-theme="amber" class="w-8 h-8 rounded-full cursor-pointer bg-amber-500 border-2 border-transparent" style="--tw-shadow-color: #f59e0b;"></span>
                     <span data-theme="ruby" class="w-8 h-8 rounded-full cursor-pointer bg-red-500 border-2 border-transparent" style="--tw-shadow-color: #ef4444;"></span>
                     <span data-theme="sapphire" class="w-8 h-8 rounded-full cursor-pointer bg-sky-500 border-2 border-transparent" style="--tw-shadow-color: #38bdf8;"></span>
+                </div>
+                <div class="mt-4 flex items-center gap-4">
+                     <label for="custom-color-picker" class="relative w-10 h-10 rounded-lg border-2 border-zinc-700 cursor-pointer" style="background-color: var(--color-primary);"><input type="color" id="custom-color-picker" class="opacity-0 w-full h-full cursor-pointer"></label>
+                     <input type="text" id="custom-color-input" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2" placeholder="Or enter a hex code... #a855f7">
                 </div>
             </div>
             <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
@@ -139,7 +151,7 @@
             </div>
         </div>
     </div>
-    <div id="live-view" class="hidden flex-col h-full p-4 space-y-4">
+    <div id="live-view" class="view flex-col h-full w-full p-4 space-y-4">
         <div id="status-bar" class="flex-shrink-0 glass-card p-3 rounded-lg flex justify-between items-center">
             <p id="tracking-status" class="font-semibold text-gray-300"></p>
             <div class="flex items-center gap-4">
@@ -158,7 +170,7 @@
                     <button id="tab-top-gifters" class="tab-button py-2 px-4 text-sm font-semibold border-b-2 border-transparent">Top Gifters</button>
                     <button id="tab-room" class="tab-button py-2 px-4 text-sm font-semibold border-b-2 border-transparent">Room Info</button>
                 </div>
-                <div class="flex-grow overflow-y-auto custom-scrollbar pr-2">
+                <div class="flex-grow overflow-y-auto custom-scrollbar pr-2 relative">
                     <div id="content-profile" class="tab-content active text-sm text-gray-400 space-y-2"></div>
                     <div id="content-top-gifters" class="tab-content text-sm text-gray-400 space-y-2"><p class="text-center italic text-zinc-500 pt-4">No gifts received yet.</p></div>
                     <div id="content-room" class="tab-content"><pre class="text-xs text-gray-400">Awaiting Room Info...</pre></div>
@@ -174,8 +186,9 @@
         const ui = {
             views: { loading: document.getElementById('loading-view'), offline: document.getElementById('offline-view'), live: document.getElementById('live-view') },
             containers: { comment: document.getElementById('comment-container'), activity: document.getElementById('activity-container'), profile: document.getElementById('content-profile'), room: document.getElementById('content-room'), topGifters: document.getElementById('content-top-gifters'), offlineProfile: document.getElementById('offline-profile-content') },
-            status: { tracking: document.getElementById('tracking-status'), connection: document.getElementById('connection-status'), loadingText: document.getElementById('loading-text') },
-            tabs: { profile: document.getElementById('tab-profile'), room: document.getElementById('tab-room'), topGifters: document.getElementById('tab-top-gifters') },
+            status: { tracking: document.getElementById('tracking-status'), connection: document.getElementById('connection-status'), loadingText: document.getElementById('loading-text'), offlineMessage: document.getElementById('offline-status-message') },
+            tabPanes: document.querySelectorAll('.tab-content'),
+            tabButtons: document.querySelectorAll('.tab-button'),
             settings: {
                 panel: document.getElementById('settings-panel'),
                 content: document.getElementById('settings-content'),
@@ -188,18 +201,20 @@
                 enabled: document.getElementById('tts-enabled-toggle'),
                 configContainer: document.getElementById('tts-config-container'),
                 themeSelectors: document.querySelectorAll('.theme-selector span'),
+                customColorPicker: document.getElementById('custom-color-picker'),
+                customColorInput: document.getElementById('custom-color-input'),
                 announce: { comment: document.getElementById('tts-announce-comment'), like: document.getElementById('tts-announce-like'), gift: document.getElementById('tts-announce-gift'), follow: document.getElementById('tts-announce-follow'), share: document.getElementById('tts-announce-share'), join: document.getElementById('tts-announce-join'), },
                 templates: { comment: document.getElementById('tts-template-comment'), like: document.getElementById('tts-template-like'), gift: document.getElementById('tts-template-gift'), follow: document.getElementById('tts-template-follow'), share: document.getElementById('tts-template-share'), join: document.getElementById('tts-template-join'), },
                 ttsStatus: { playing: document.getElementById('settings-tts-playing'), queueCount: document.getElementById('settings-tts-queue-count'), queueList: document.getElementById('settings-tts-queue-list') }
             }
         };
 
-        let ttsQueue = [], isSpeaking = false, settings = {};
-        let topGifters = {};
+        let ttsQueue = [], isSpeaking = false, settings = {}, topGifters = {};
         const silentAudio = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+        const defaultAvatar = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23404040"/><text x="50" y="55" font-family="Arial" font-size="40" fill="%23fafafa" text-anchor="middle">?</text></svg>')}`;
 
         const defaultSettings = {
-            theme: 'amethyst',
+            theme: 'amethyst', customColor: null,
             tts: {
                 apiKey: '', voiceId: '21m00Tcm4TlvDq8ikWAM', enabled: false,
                 announce: { comment: true, like: false, gift: true, follow: true, share: false, join: false },
@@ -207,10 +222,43 @@
             }
         };
         
+        const statusIcons = {
+            live: '<i class="fa-solid fa-circle text-green-500 mr-2"></i>',
+            offline: '<i class="fa-solid fa-circle text-gray-500 mr-2"></i>',
+            ended: '<i class="fa-solid fa-circle-xmark text-red-500 mr-2"></i>',
+            disconnected: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
+            error: '<i class="fa-solid fa-bug text-red-500 mr-2"></i>',
+            warn: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
+            info: '<i class="fa-solid fa-magnifying-glass mr-2" style="color:var(--color-primary)"></i>'
+        };
+
+        function hexToHsl(hex) {
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            if (!result) return null;
+            let r = parseInt(result[1], 16) / 255, g = parseInt(result[2], 16) / 255, b = parseInt(result[3], 16) / 255;
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max == min) { h = s = 0; } 
+            else {
+                let d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+        }
+
         function saveAndApplySettings() {
-            let currentTheme = 'amethyst';
-            ui.settings.themeSelectors.forEach(s => { if(s.classList.contains('active')) currentTheme = s.dataset.theme; });
-            settings.theme = currentTheme;
+            if(settings.theme !== 'custom') {
+                let currentTheme = 'amethyst';
+                ui.settings.themeSelectors.forEach(s => { if(s.classList.contains('active')) currentTheme = s.dataset.theme; });
+                settings.theme = currentTheme;
+                settings.customColor = null;
+            }
             settings.tts.apiKey = ui.settings.apiKey.value;
             settings.tts.voiceId = ui.settings.voiceId.value;
             settings.tts.enabled = ui.settings.enabled.checked;
@@ -223,10 +271,22 @@
         }
 
         function applySettings() {
-            document.documentElement.className = `theme-${settings.theme}`;
-            ui.settings.themeSelectors.forEach(selector => {
-                selector.classList.toggle('active', selector.dataset.theme === settings.theme);
-            });
+            if (settings.customColor) {
+                const hsl = hexToHsl(settings.customColor);
+                if (hsl) {
+                    document.documentElement.style.setProperty('--color-primary-h', hsl.h);
+                    document.documentElement.style.setProperty('--color-primary-s', `${hsl.s}%`);
+                    document.documentElement.style.setProperty('--color-primary-l', `${hsl.l}%`);
+                }
+                document.documentElement.className = '';
+                ui.settings.themeSelectors.forEach(selector => selector.classList.remove('active'));
+            } else {
+                document.documentElement.style.removeProperty('--color-primary-h');
+                document.documentElement.style.removeProperty('--color-primary-s');
+                document.documentElement.style.removeProperty('--color-primary-l');
+                document.documentElement.className = `theme-${settings.theme}`;
+                ui.settings.themeSelectors.forEach(selector => selector.classList.toggle('active', selector.dataset.theme === settings.theme));
+            }
             const isTTSEnabled = settings.tts.enabled;
             ui.settings.configContainer.style.opacity = isTTSEnabled ? '1' : '0.5';
             ui.settings.configContainer.style.pointerEvents = isTTSEnabled ? 'auto' : 'none';
@@ -237,7 +297,10 @@
 
         function loadSettings() {
             const savedSettings = localStorage.getItem('liveTrackerSettings');
-            settings = savedSettings ? { ...defaultSettings, ...JSON.parse(savedSettings), tts: { ...defaultSettings.tts, ...(JSON.parse(savedSettings).tts || {}) } } : defaultSettings;
+            settings = savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+            if (!settings.tts) settings.tts = defaultSettings.tts;
+            if (settings.customColor) ui.settings.customColorInput.value = settings.customColor;
+            
             ui.settings.apiKey.value = settings.tts.apiKey;
             ui.settings.voiceId.value = settings.tts.voiceId;
             ui.settings.enabled.checked = settings.tts.enabled;
@@ -261,8 +324,7 @@
                 statusEl.style.color = 'var(--color-primary-glow)';
             }
             ui.settings.ttsStatus.queueCount.textContent = ttsQueue.length;
-            const queueList = ui.settings.ttsStatus.queueList;
-            queueList.innerHTML = ttsQueue.length === 0 ? '<p class="text-zinc-500 italic">Queue is empty.</p>' : ttsQueue.map(text => `<p class="text-gray-300 truncate">${text}</p>`).join('');
+            ui.settings.ttsStatus.queueList.innerHTML = ttsQueue.length === 0 ? '<p class="text-zinc-500 italic">Queue is empty.</p>' : ttsQueue.map(text => `<p class="text-gray-300 truncate">${text}</p>`).join('');
         }
 
         async function playTTS(text, isTest = false) {
@@ -317,34 +379,19 @@
 
             const template = settings.tts.templates[type];
             if (!template) return;
-            const formattedText = template
-                .replace(/{user}/g, data.user)
-                .replace(/{comment}/g, data.comment)
-                .replace(/{count}/g, data.count)
-                .replace(/{gift_name}/g, data.gift_name);
-            if (formattedText) {
-                ttsQueue.push(formattedText);
-                updateSettingsTTSStatusUI(isSpeaking ? ui.settings.ttsStatus.playing.textContent : null);
-                processTTSQueue();
-            }
+            const formattedText = template.replace(/{user}/g, data.user).replace(/{comment}/g, data.comment).replace(/{count}/g, data.count).replace(/{gift_name}/g, data.gift_name);
+            if (formattedText) { ttsQueue.push(formattedText); updateSettingsTTSStatusUI(isSpeaking ? ui.settings.ttsStatus.playing.textContent : null); processTTSQueue(); }
         }
 
         function renderTopGifters() {
             const sortedGifters = Object.entries(topGifters).sort((a, b) => b[1].totalCoins - a[1].totalCoins);
-            if(sortedGifters.length === 0) {
-                ui.containers.topGifters.innerHTML = '<p class="text-center italic text-zinc-500 pt-4">No gifts received yet.</p>';
-                return;
-            }
+            if(sortedGifters.length === 0) { ui.containers.topGifters.innerHTML = '<p class="text-center italic text-zinc-500 pt-4">No gifts received yet.</p>'; return; }
             ui.containers.topGifters.innerHTML = sortedGifters.map(([userId, data], index) => `
                 <div class="flex items-center space-x-4 p-2 rounded-lg bg-zinc-800/50">
                     <span class="font-bold text-lg w-6 text-center" style="color:var(--color-primary-glow)">#${index + 1}</span>
-                    <img src="${data.avatar || 'https://p16-sign-va.tiktokcdn.com/tos-maliva-avt-0068/e9097a955776334553591427507d3999~c5_720x720.jpeg'}" class="w-10 h-10 rounded-full object-cover">
-                    <div class="flex-grow">
-                        <p class="font-semibold text-white">${data.user}</p>
-                        <p class="text-xs text-zinc-400">${data.totalCoins.toLocaleString()} coins</p>
-                    </div>
-                </div>
-            `).join('');
+                    <img src="${data.avatar || defaultAvatar}" class="w-10 h-10 rounded-full object-cover">
+                    <div class="flex-grow"> <p class="font-semibold text-white">${data.user}</p> <p class="text-xs text-zinc-400">${data.totalCoins.toLocaleString()} coins</p> </div>
+                </div>`).join('');
         }
         
         function addEvent(container, htmlContent) {
@@ -358,102 +405,140 @@
             }
         }
 
+        let currentView = 'loading';
         function switchView(viewName) {
-            Object.values(ui.views).forEach(key => key.style.display = 'none');
-            ui.views[viewName].style.display = 'flex';
+            if (currentView === viewName) return;
+            const currentViewEl = ui.views[currentView];
+            const newViewEl = ui.views[viewName];
+
+            if (currentViewEl) {
+                currentViewEl.classList.add('fade-out');
+                setTimeout(() => {
+                    currentViewEl.classList.remove('active', 'fade-out');
+                }, 400);
+            }
+            if (newViewEl) {
+                newViewEl.classList.remove('fade-out');
+                newViewEl.classList.add('active', 'fade-in');
+            }
+            currentView = viewName;
+        }
+
+        function resetUI() {
+            ui.containers.comment.innerHTML = '';
+            ui.containers.activity.innerHTML = '';
+            ui.containers.topGifters.innerHTML = '<p class="text-center italic text-zinc-500 pt-4">No gifts received yet.</p>';
+            topGifters = {};
+        }
+
+        function handleStreamEnd() {
+            resetUI();
+            ui.status.offlineMessage.textContent = 'Live stream has ended.';
+            switchView('offline');
         }
 
         function processEvent(data) {
-            let html, container, userHtml;
+            let html, container;
             const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-            if (data.type !== 'system_status') {
-                 addToTTSQueue(data, data.type);
-            }
+            if (data.type !== 'system_status') addToTTSQueue(data, data.type);
 
             switch (data.type) {
+                case 'status_update': data.status === 'live' ? switchView('live') : handleStreamEnd(); return;
                 case 'profile_info':
-                    ui.containers.profile.innerHTML = `<div class="flex flex-col items-center space-y-4 pt-2">
-                        <img src="${data.data.avatar}" class="w-24 h-24 rounded-full border-4 glowing-avatar object-cover">
-                        <div class="text-center">
-                            <p class="text-2xl font-bold text-gray-100">${data.data.nickname || 'N/A'}</p>
-                            <p class="text-gray-400">@${data.data.username || 'N/A'}</p>
-                        </div></div>`;
-                    ui.containers.offlineProfile.innerHTML = ui.containers.profile.innerHTML;
+                    const profileHtml = `<div class="flex flex-col items-center space-y-4 pt-2">
+                        <img src="${data.data.avatar || defaultAvatar}" class="w-24 h-24 rounded-full border-4 glowing-avatar object-cover">
+                        <div class="text-center"><p class="text-2xl font-bold text-gray-100">${data.data.nickname||'N/A'}</p><p class="text-gray-400">@${data.data.username||'N/A'}</p></div>
+                        <div class="w-full grid grid-cols-2 gap-4 text-center glass-card rounded-lg p-3">
+                            <div><p class="font-bold text-gray-200 text-lg">${(data.data.followers||0).toLocaleString()}</p><p class="text-sm">Followers</p></div>
+                            <div><p class="font-bold text-gray-200 text-lg">${(data.data.following||0).toLocaleString()}</p><p class="text-sm">Following</p></div>
+                        </div>
+                        <div class="w-full text-left glass-card rounded-lg p-3"> <p class="font-bold text-gray-300">Bio:</p> <p class="p-2 bg-zinc-900/50 rounded-md max-h-24 overflow-y-auto custom-scrollbar">${data.data.bio||'This user has not provided a bio.'}</p> </div>
+                    </div>`;
+                    ui.containers.profile.innerHTML = profileHtml;
+                    ui.containers.offlineProfile.innerHTML = profileHtml;
                     return;
-                case 'status_update': switchView(data.status === 'live' ? 'live' : 'offline'); return;
-                case 'room_info_update': ui.containers.room.innerHTML = `<pre class="text-xs text-gray-400 whitespace-pre-wrap break-all">${JSON.stringify(data.data, null, 2)}</pre>`; return;
+                case 'room_info_update': ui.containers.room.innerHTML = `<pre class="text-xs text-gray-400 whitespace-pre-wrap break-all">${JSON.stringify(data.data,null,2)}</pre>`; return;
                 case 'comment':
                     container = ui.containers.comment;
                     html = `<div class="event-card"><div class="flex items-start space-x-3">
-                        <img src="${data.avatar || 'https://p16-sign-va.tiktokcdn.com/tos-maliva-avt-0068/e9097a955776334553591427507d3999~c5_720x720.jpeg'}" class="w-8 h-8 rounded-full mt-1 object-cover">
+                        <img src="${data.avatar || defaultAvatar}" class="w-8 h-8 rounded-full mt-1 object-cover">
                         <div class="flex-grow"><p class="text-sm"><span class="font-bold text-gray-200">${data.user || 'User'}:</span> <span class="text-gray-300">${data.comment}</span></p>
                         <p class="text-xs text-zinc-500">${time}</p></div></div></div>`;
                     break;
                 case 'gift':
-                    if (data.user && data.coins > 0) {
+                    const coins = Number(data.coins) || 0, count = Number(data.count) || 1;
+                    if (data.user && coins > 0) {
                         if (!topGifters[data.userId]) topGifters[data.userId] = { user: data.user, avatar: data.avatar, totalCoins: 0 };
-                        topGifters[data.userId].totalCoins += data.coins * data.count;
+                        topGifters[data.userId].totalCoins += coins * count;
                         renderTopGifters();
                     }
                     let giftTier = 'gift-card-tier-1';
-                    if (data.coins >= 1000) giftTier = 'gift-card-tier-5';
-                    else if (data.coins >= 500) giftTier = 'gift-card-tier-4';
-                    else if (data.coins >= 100) giftTier = 'gift-card-tier-3';
-                    else if (data.coins >= 10) giftTier = 'gift-card-tier-2';
+                    if (coins >= 1000) giftTier = 'gift-card-tier-5'; else if (coins >= 500) giftTier = 'gift-card-tier-4'; else if (coins >= 100) giftTier = 'gift-card-tier-3'; else if (coins >= 10) giftTier = 'gift-card-tier-2';
 
                     container = ui.containers.activity;
                     html = `<div class="event-card"><div class="flex items-center space-x-3 p-2 rounded-lg bg-zinc-800/60 ${giftTier}">
-                        <img src="${data.gift_image_url}" class="w-10 h-10">
-                        <div class="flex-grow"><p class="text-sm text-white">${data.user} sent ${data.count}x <b>${data.gift_name}</b>!</p>
-                        <p class="text-xs text-zinc-400">${(data.coins * data.count).toLocaleString()} coins • ${time}</p></div></div></div>`;
+                        <img src="${data.gift_image_url || defaultAvatar}" class="w-10 h-10"><div class="flex-grow"><p class="text-sm text-white">${data.user} sent ${count}x <b>${data.gift_name}</b>!</p>
+                        <p class="text-xs text-zinc-400">${(coins*count).toLocaleString()} coins • ${time}</p></div></div></div>`;
                     break;
                 case 'like': case 'follow': case 'share': case 'join':
                     const iconMap = { like: 'fa-heart text-red-500', follow: 'fa-user-plus text-sky-400', share: 'fa-share text-purple-400', join: 'fa-right-to-bracket text-gray-400' };
-                    const textMap = { like: `sent ${data.count} like(s)!`, follow: 'followed!', share: 'shared!', join: 'joined!' };
+                    const textMap = { like: `sent ${data.count || 1} like(s)!`, follow: 'followed!', share: 'shared!', join: 'joined!' };
                     container = ui.containers.activity;
                     html = `<div class="event-card"><div class="flex items-center space-x-3 text-sm p-1.5"><i class="fa-solid ${iconMap[data.type]} w-4 text-center"></i>
                         <p class="text-zinc-300"><span class="font-semibold text-white">${data.user}</span> ${textMap[data.type]}</p>
                         <p class="text-xs text-zinc-500 ml-auto">${time}</p></div></div>`;
                     break;
-                case 'system_status': ui.status.connection.innerHTML = `<span>${data.status}</span>`; return;
+                case 'system_status': ui.status.connection.innerHTML = `<span>${statusIcons[data.level] || ''}${data.status}</span>`; return;
                 default: return;
             }
             if (container) addEvent(container, html);
         }
         
         function setupEventListeners() {
-            ui.settings.openBtn.addEventListener('click', () => {
-                new Audio(silentAudio).play().catch(e => {});
-                ui.settings.panel.classList.add('open');
-            });
+            ui.settings.openBtn.addEventListener('click', () => { new Audio(silentAudio).play().catch(e => {}); ui.settings.panel.classList.add('open'); });
             ui.settings.closeBtn.addEventListener('click', () => ui.settings.panel.classList.remove('open'));
             ui.settings.testVoiceBtn.addEventListener('click', () => playTTS('Hello, this is a test of my voice.', true));
-            ui.settings.clearQueueBtn.addEventListener('click', () => {
-                ttsQueue.length = 0;
-                updateSettingsTTSStatusUI();
-            });
+            ui.settings.clearQueueBtn.addEventListener('click', () => { ttsQueue.length = 0; updateSettingsTTSStatusUI(); });
 
             const allSettingsInputs = ui.settings.content.querySelectorAll('input, select');
             allSettingsInputs.forEach(input => {
-                input.addEventListener(input.type === 'checkbox' ? 'change' : 'input', saveAndApplySettings);
+                const eventType = (input.type === 'checkbox' || input.type === 'color') ? 'change' : 'input';
+                input.addEventListener(eventType, saveAndApplySettings);
             });
             
             ui.settings.themeSelectors.forEach(selector => {
                 selector.addEventListener('click', () => {
-                    ui.settings.themeSelectors.forEach(s => s.classList.remove('active'));
-                    selector.classList.add('active');
+                    settings.theme = selector.dataset.theme;
+                    settings.customColor = null;
+                    ui.settings.customColorInput.value = '';
                     saveAndApplySettings();
                 });
             });
 
-            Object.values(ui.tabs).forEach(tab => {
-                tab.addEventListener('click', () => {
-                    Object.values(ui.tabs).forEach(t => t.classList.remove('active'));
-                    Object.values(ui.containers).forEach(c => c.classList?.remove('active'));
-                    tab.classList.add('active');
-                    const contentId = `content-${tab.id.split('-')[1]}`;
-                    document.getElementById(contentId)?.classList.add('active');
+            ui.settings.customColorPicker.addEventListener('input', (e) => {
+                settings.customColor = e.target.value;
+                ui.settings.customColorInput.value = e.target.value;
+                settings.theme = 'custom';
+                saveAndApplySettings();
+            });
+
+            ui.settings.customColorInput.addEventListener('input', (e) => {
+                const hex = e.target.value;
+                if (/^#([0-9A-F]{3}){1,2}$/i.test(hex)) {
+                    settings.customColor = hex;
+                    settings.theme = 'custom';
+                    saveAndApplySettings();
+                }
+            });
+
+            ui.tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    ui.tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    ui.tabPanes.forEach(pane => {
+                        pane.classList.toggle('active', pane.id === `content-${button.id.split('-')[1]}`);
+                    });
                 });
             });
         }
@@ -461,20 +546,18 @@
         function connect() {
             const username = window.location.pathname.split('/').filter(p => p)[0];
             if (!username) {
+                ui.status.offlineMessage.textContent = 'No username provided in URL.';
                 switchView('offline');
                 document.title = 'Error | TikTok Live Tracker';
-                ui.containers.offlineProfile.innerHTML = `<h1 class="text-2xl text-red-400 font-bold">Error: No Username Provided</h1>`;
                 return;
             }
+            resetUI();
             switchView('loading');
             ui.status.tracking.innerHTML = `Tracking: <span class="font-bold text-white text-lg">${username}</span>`;
             
             const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
             const ws = new WebSocket(`${protocol}://${location.host}/ws/${username}`);
-            
-            ws.onmessage = (event) => {
-                try { processEvent(JSON.parse(event.data)); } catch (e) { console.error("Message Parse Error:", e, event.data); }
-            };
+            ws.onmessage = (event) => { try { processEvent(JSON.parse(event.data)); } catch (e) { console.error("Message Parse Error:", e, event.data); } };
             ws.onclose = () => setTimeout(connect, 5000);
             ws.onerror = (e) => ws.close();
         }

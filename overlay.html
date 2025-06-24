@@ -32,7 +32,7 @@
         .blinking-dot { animation: blink 1.5s infinite ease-in-out; display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 9999px; background-color: currentColor; margin-right: 0.75rem; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
         .glass-card { background: rgba(39, 39, 42, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .glowing-avatar { box-shadow: 0 0 15px rgba(52, 152, 219, 0.7); }
+        .glowing-avatar { box-shadow: 0 0 15px rgba(16, 185, 129, 0.6); }
         .activity-filter-dropdown { display: none; position: absolute; right: 0; top: 100%; z-index: 10; }
         .settings-panel { transition: opacity 0.3s ease, visibility 0.3s ease; }
         .settings-panel.hidden { opacity: 0; visibility: hidden; }
@@ -40,90 +40,91 @@
         .form-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4b5563; transition: .4s; border-radius: 28px; }
         .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #3b82f6; }
+        input:checked + .slider { background-color: #10b981; }
         input:checked + .slider:before { transform: translateX(22px); }
+        input:disabled, label:has(input:disabled) { opacity: 0.5; cursor: not-allowed !important; }
+        .form-checkbox { border-radius: 4px; background-color: #52525b; border-color: #3f3f46; color: #10b981;}
+        .form-checkbox:focus { ring: #10b981; }
     </style>
 </head>
 <body class="h-screen">
     <div id="loading-view" class="flex flex-col h-full w-full items-center justify-center bg-zinc-900 p-8 text-center">
-        <i class="fa-solid fa-spinner fa-spin fa-3x text-sky-400"></i>
+        <i class="fa-solid fa-spinner fa-spin fa-3x text-emerald-500"></i>
         <p id="loading-text" class="mt-4 text-xl font-semibold text-gray-300">Connecting...</p>
     </div>
-
     <div id="offline-view" class="hidden flex-col h-full w-full items-center justify-center bg-zinc-900 p-8 text-center">
         <div id="offline-profile-content" class="max-w-md w-full glass-card rounded-2xl p-6 shadow-2xl"></div>
     </div>
-    
-    <div id="settings-panel" class="settings-panel hidden fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center">
-        <div class="bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl w-full max-w-2xl p-6 relative max-h-[90vh] flex flex-col">
-            <h2 class="text-2xl font-bold text-white mb-4">TTS Settings</h2>
-            <button id="close-settings-button" class="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors">
-                <i class="fa-solid fa-times fa-lg"></i>
-            </button>
-            <div class="flex-grow overflow-y-auto custom-scrollbar pr-4 space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="tts-api-key" class="block text-sm font-medium text-gray-300 mb-2">ElevenLabs API Key</label>
-                        <input type="password" id="tts-api-key" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                    </div>
-                    <div>
-                        <label for="tts-voice-id" class="block text-sm font-medium text-gray-300 mb-2">Voice ID</label>
-                        <input type="text" id="tts-voice-id" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500">
+    <div id="settings-panel" class="settings-panel hidden fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-700 rounded-2xl shadow-xl w-full max-w-4xl p-6 relative max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h2 class="text-2xl font-bold text-white">TTS Settings</h2>
+                <button id="close-settings-button" class="text-zinc-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-times fa-lg"></i>
+                </button>
+            </div>
+            <div id="settings-content" class="flex-grow overflow-y-auto custom-scrollbar pr-4 space-y-6">
+                <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
+                    <h3 class="text-lg font-semibold text-white mb-3">Master Control</h3>
+                    <div class="flex items-center justify-between p-4 rounded-lg bg-zinc-900">
+                        <span class="font-semibold text-lg text-white">Enable Text-to-Speech</span>
+                        <label class="form-switch"><input type="checkbox" id="tts-enabled-toggle"><span class="slider"></span></label>
                     </div>
                 </div>
-
-                <div class="flex items-center justify-between p-4 rounded-lg bg-zinc-800">
-                    <span class="font-semibold text-lg text-white">Enable TTS</span>
-                    <label class="form-switch"><input type="checkbox" id="tts-enabled-toggle"><span class="slider"></span></label>
-                </div>
-                
-                <div>
-                    <h3 class="text-lg font-semibold text-white mb-3">TTS Status</h3>
-                    <div class="space-y-3 p-4 rounded-lg bg-zinc-800 text-sm">
-                        <div>
-                            <span class="font-medium text-zinc-400">Now Playing:</span>
-                            <p id="settings-tts-playing" class="text-sky-300 italic min-h-[1.25rem]">None</p>
+                <div id="tts-config-container" class="space-y-6">
+                    <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
+                        <h3 class="text-lg font-semibold text-white mb-3">Credentials</h3>
+                        <p class="text-xs text-zinc-400 mb-4">Your API Key and desired Voice ID from ElevenLabs.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="tts-api-key" class="block text-sm font-medium text-gray-300 mb-2">ElevenLabs API Key</label>
+                                <input type="password" id="tts-api-key" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                            <div>
+                                <label for="tts-voice-id" class="block text-sm font-medium text-gray-300 mb-2">Voice ID</label>
+                                <input type="text" id="tts-voice-id" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
                         </div>
-                         <div>
-                            <span class="font-medium text-zinc-400">Queue (<span id="settings-tts-queue-count">0</span>):</span>
-                            <div id="settings-tts-queue-list" class="mt-2 p-2 bg-zinc-900 rounded-md max-h-32 overflow-y-auto custom-scrollbar">
-                                <p class="text-zinc-500 italic">Queue is empty.</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
+                        <h3 class="text-lg font-semibold text-white mb-3">Event Configuration</h3>
+                        <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                            <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-join" class="form-checkbox h-5 w-5"> <span class="text-gray-300">Announce Joins</span></label>
+                            <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-follow" class="form-checkbox h-5 w-5"> <span class="text-gray-300">Announce Follows</span></label>
+                            <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-share" class="form-checkbox h-5 w-5"> <span class="text-gray-300">Announce Shares</span></label>
+                            <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-like" class="form-checkbox h-5 w-5"> <span class="text-gray-300">Announce Likes</span></label>
+                            <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-comment" class="form-checkbox h-5 w-5"> <span class="text-gray-300">Announce Comments</span></label>
+                            <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-gift" class="form-checkbox h-5 w-5"> <span class="text-gray-300">Announce Gifts</span></label>
+                        </div>
+                        <div class="mt-6 space-y-3">
+                            <p class="text-sm text-zinc-400">Use placeholders: {user}, {comment}, {count}, {gift_name}</p>
+                            <input type="text" id="tts-template-join" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-opacity" placeholder="Join Template">
+                            <input type="text" id="tts-template-follow" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-opacity" placeholder="Follow Template">
+                            <input type="text" id="tts-template-share" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-opacity" placeholder="Share Template">
+                            <input type="text" id="tts-template-like" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-opacity" placeholder="Like Template">
+                            <input type="text" id="tts-template-comment" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-opacity" placeholder="Comment Template">
+                            <input type="text" id="tts-template-gift" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-opacity" placeholder="Gift Template">
+                        </div>
+                    </div>
+                    <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
+                        <h3 class="text-lg font-semibold text-white mb-3">Live Status</h3>
+                        <div class="space-y-3 p-4 rounded-lg bg-zinc-900 text-sm">
+                            <div>
+                                <span class="font-medium text-zinc-400">Current Status:</span>
+                                <p id="settings-tts-playing" class="text-emerald-300 italic min-h-[1.25rem]">Idle</p>
+                            </div>
+                            <div>
+                                <span class="font-medium text-zinc-400">Message Queue (<span id="settings-tts-queue-count">0</span>):</span>
+                                <div id="settings-tts-queue-list" class="mt-2 p-2 bg-black/20 rounded-md max-h-32 overflow-y-auto custom-scrollbar">
+                                    <p class="text-zinc-500 italic">Queue is empty.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold text-white mb-3">Announce Events</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg"><input type="checkbox" id="tts-announce-comment" class="form-checkbox h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-sky-500 focus:ring-sky-500"> <span class="text-gray-300">Comments</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg"><input type="checkbox" id="tts-announce-like" class="form-checkbox h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-sky-500 focus:ring-sky-500"> <span class="text-gray-300">Likes</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg"><input type="checkbox" id="tts-announce-gift" class="form-checkbox h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-sky-500 focus:ring-sky-500"> <span class="text-gray-300">Gifts</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg"><input type="checkbox" id="tts-announce-follow" class="form-checkbox h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-sky-500 focus:ring-sky-500"> <span class="text-gray-300">Follows</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg"><input type="checkbox" id="tts-announce-share" class="form-checkbox h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-sky-500 focus:ring-sky-500"> <span class="text-gray-300">Shares</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg"><input type="checkbox" id="tts-announce-join" class="form-checkbox h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-sky-500 focus:ring-sky-500"> <span class="text-gray-300">Joins</span></label>
-                    </div>
-                </div>
-                
-                <div>
-                    <h3 class="text-lg font-semibold text-white mb-3">Announcement Templates</h3>
-                    <div class="space-y-2 text-sm">
-                        <p class="text-xs text-zinc-400">Use placeholders: {user}, {comment}, {count}, {gift_name}</p>
-                        <input type="text" id="tts-template-comment" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Comment Template">
-                        <input type="text" id="tts-template-like" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Like Template">
-                        <input type="text" id="tts-template-gift" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Gift Template">
-                        <input type="text" id="tts-template-follow" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Follow Template">
-                        <input type="text" id="tts-template-share" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Share Template">
-                        <input type="text" id="tts-template-join" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Join Template">
-                    </div>
-                </div>
-            </div>
-             <div class="mt-6 flex-shrink-0">
-                <button id="save-settings-button" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">Save & Close</button>
             </div>
         </div>
     </div>
-
     <div id="live-view" class="hidden flex-col h-full p-4 space-y-4">
         <div id="status-bar" class="flex-shrink-0 glass-card p-3 rounded-lg flex justify-between items-center">
             <p id="tracking-status" class="font-semibold text-gray-300"></p>
@@ -136,7 +137,7 @@
             <div class="col-span-2 row-span-2 flex flex-col glass-card rounded-lg p-3">
                 <h2 class="text-lg font-bold text-gray-200 mb-2 border-b border-zinc-700 pb-2">Live Chat</h2>
                 <div class="flex items-center space-x-2 mb-2 flex-shrink-0">
-                    <input type="text" id="chat-search-input" class="bg-zinc-800 text-gray-300 text-sm rounded-md w-full px-3 py-1.5 border border-transparent focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Search by message...">
+                    <input type="text" id="chat-search-input" class="bg-zinc-800 text-gray-300 text-sm rounded-md w-full px-3 py-1.5 border border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Search by message...">
                     <button id="chat-filter-button" class="bg-zinc-700 hover:bg-zinc-600 text-gray-200 w-12 h-9 flex-shrink-0 flex items-center justify-center rounded-md transition-colors">
                         <i id="chat-filter-icon" class="fa-solid fa-message"></i>
                     </button>
@@ -182,7 +183,6 @@
             </div>
         </div>
     </div>
-
     <script>
         const ui = {
             views: { loading: document.getElementById('loading-view'), offline: document.getElementById('offline-view'), live: document.getElementById('live-view') },
@@ -194,12 +194,13 @@
             totalLikesCount: document.getElementById('total-likes-count'),
             settings: {
                 panel: document.getElementById('settings-panel'),
+                content: document.getElementById('settings-content'),
                 openBtn: document.getElementById('settings-button'),
                 closeBtn: document.getElementById('close-settings-button'),
-                saveBtn: document.getElementById('save-settings-button'),
                 apiKey: document.getElementById('tts-api-key'),
                 voiceId: document.getElementById('tts-voice-id'),
                 enabled: document.getElementById('tts-enabled-toggle'),
+                configContainer: document.getElementById('tts-config-container'),
                 announce: {
                     comment: document.getElementById('tts-announce-comment'),
                     like: document.getElementById('tts-announce-like'),
@@ -250,22 +251,10 @@
             disconnected: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
             error: '<i class="fa-solid fa-bug text-red-500 mr-2"></i>',
             warn: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
-            info: '<i class="fa-solid fa-magnifying-glass text-sky-400 mr-2"></i>'
+            info: '<i class="fa-solid fa-magnifying-glass text-emerald-400 mr-2"></i>'
         };
 
-        function loadSettings() {
-            const savedSettings = localStorage.getItem('ttsSettings');
-            ttsSettings = savedSettings ? { ...defaultTTSSettings, ...JSON.parse(savedSettings) } : defaultTTSSettings;
-            ui.settings.apiKey.value = ttsSettings.apiKey;
-            ui.settings.voiceId.value = ttsSettings.voiceId;
-            ui.settings.enabled.checked = ttsSettings.enabled;
-            for (const event in ttsSettings.announce) {
-                ui.settings.announce[event].checked = ttsSettings.announce[event];
-                ui.settings.templates[event].value = ttsSettings.templates[event];
-            }
-        }
-
-        function saveSettings() {
+        function saveAndApplySettings() {
             ttsSettings.apiKey = ui.settings.apiKey.value;
             ttsSettings.voiceId = ui.settings.voiceId.value;
             ttsSettings.enabled = ui.settings.enabled.checked;
@@ -274,19 +263,47 @@
                 ttsSettings.templates[event] = ui.settings.templates[event].value;
             }
             localStorage.setItem('ttsSettings', JSON.stringify(ttsSettings));
-            new Audio(silentAudio).play().catch(e => {});
-            ui.settings.panel.classList.add('hidden');
+            updateSettingsUIState();
+        }
+
+        function updateSettingsUIState() {
+            const isTTSEnabled = ui.settings.enabled.checked;
+            ui.settings.configContainer.style.opacity = isTTSEnabled ? '1' : '0.5';
+            ui.settings.configContainer.style.pointerEvents = isTTSEnabled ? 'auto' : 'none';
+
+            for (const event in ui.settings.announce) {
+                const isAnnounceEnabled = ui.settings.announce[event].checked;
+                const templateInput = ui.settings.templates[event];
+                templateInput.disabled = !isAnnounceEnabled;
+            }
         }
         
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('ttsSettings');
+            ttsSettings = savedSettings ? { ...defaultTTSSettings, ...JSON.parse(savedSettings) } : defaultTTSSettings;
+            ui.settings.apiKey.value = ttsSettings.apiKey;
+            ui.settings.voiceId.value = ttsSettings.voiceId;
+            ui.settings.enabled.checked = ttsSettings.enabled;
+            for (const event in ttsSettings.announce) {
+                if(ui.settings.announce[event]) {
+                    ui.settings.announce[event].checked = ttsSettings.announce[event];
+                }
+                if(ui.settings.templates[event]) {
+                    ui.settings.templates[event].value = ttsSettings.templates[event];
+                }
+            }
+            updateSettingsUIState();
+        }
+
         function updateSettingsTTSStatusUI(statusText = null) {
             const statusEl = ui.settings.ttsStatus.playing;
             if (statusText) {
                 statusEl.textContent = statusText;
-                statusEl.classList.toggle('text-red-400', statusText.toLowerCase().includes('error') || statusText.toLowerCase().includes('blocked'));
-                statusEl.classList.remove('italic', 'text-sky-300');
+                statusEl.classList.toggle('text-red-400', statusText.toLowerCase().includes('error') || statusText.toLowerCase().includes('blocked') || statusText.toLowerCase().includes('invalid'));
+                statusEl.classList.remove('italic', 'text-emerald-300');
             } else {
-                statusEl.textContent = 'None';
-                statusEl.className = 'text-sky-300 italic min-h-[1.25rem]';
+                statusEl.textContent = 'Idle';
+                statusEl.className = 'text-emerald-300 italic min-h-[1.25rem]';
             }
             
             ui.settings.ttsStatus.queueCount.textContent = ttsQueue.length;
@@ -305,10 +322,15 @@
         }
 
         async function playTTS(text) {
+            if (!text || text.trim() === '') {
+                isSpeaking = false;
+                processTTSQueue();
+                return;
+            }
             if (!ttsSettings.apiKey || !ttsSettings.voiceId) {
                 isSpeaking = false;
                 updateSettingsTTSStatusUI('API Error: Key or Voice ID missing.');
-                setTimeout(processTTSQueue, 1000);
+                setTimeout(processTTSQueue, 3000);
                 return;
             }
             const url = `https://api.elevenlabs.io/v1/text-to-speech/${ttsSettings.voiceId}`;
@@ -316,9 +338,22 @@
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'xi-api-key': ttsSettings.apiKey },
-                    body: JSON.stringify({ text, model_id: "eleven_multilingual_v2", voice_settings: { stability: 0.5, similarity_boost: 0.8 } })
+                    body: JSON.stringify({ text, model_id: "eleven_turbo_v2", voice_settings: { stability: 0.5, similarity_boost: 0.8 } })
                 });
-                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                
+                if (!response.ok) {
+                    let errorDetail = `API Error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.detail && errorData.detail.message) {
+                            errorDetail = `API Error: ${errorData.detail.message}`;
+                        } else if (typeof errorData.detail === 'string') {
+                            errorDetail = `API Error: ${errorData.detail}`;
+                        }
+                    } catch (e) { }
+                    throw new Error(errorDetail);
+                }
+
                 const blob = await response.blob();
                 const audio = new Audio(URL.createObjectURL(blob));
                 audio.onended = () => {
@@ -329,19 +364,17 @@
                 await audio.play();
             } catch (error) {
                 console.error("TTS Error:", error);
-                const errorText = error.message.includes('API Error') ? 'API Error. Check key or voice ID.' : 'Playback blocked. Click page to unmute.';
+                const errorText = error.message.includes('API Error') ? error.message : 'Playback blocked. Click page to unmute.';
                 updateSettingsTTSStatusUI(errorText);
                 isSpeaking = false;
-                setTimeout(processTTSQueue, 1000);
+                setTimeout(processTTSQueue, 5000);
             }
         }
         
         function processTTSQueue() {
-            if (isSpeaking || ttsQueue.length === 0) return;
+            if (isSpeaking || ttsQueue.length === 0 || !ttsSettings.enabled) return;
             isSpeaking = true;
             const text = ttsQueue.shift();
-            ui.settings.ttsStatus.playing.textContent = text;
-            ui.settings.ttsStatus.playing.className = 'text-sky-300 min-h-[1.25rem]';
             updateSettingsTTSStatusUI(text);
             playTTS(text);
         }
@@ -501,9 +534,9 @@
             });
             ui.activity.filterDropdown.addEventListener('click', (e) => {
                 e.preventDefault();
-                const filter = e.target.closest('a').dataset.filter;
-                if (filter) {
-                    activityFilterMode = filter;
+                const link = e.target.closest('a');
+                if (link && link.dataset.filter) {
+                    activityFilterMode = link.dataset.filter;
                     filterActivity();
                     ui.activity.filterDropdown.style.display = 'none';
                 }
@@ -516,9 +549,17 @@
                     document.getElementById(`content-${key}`).classList.add('active');
                 });
             });
-            ui.settings.openBtn.addEventListener('click', () => ui.settings.panel.classList.remove('hidden'));
+            ui.settings.openBtn.addEventListener('click', () => {
+                new Audio(silentAudio).play().catch(e => {});
+                ui.settings.panel.classList.remove('hidden');
+            });
             ui.settings.closeBtn.addEventListener('click', () => ui.settings.panel.classList.add('hidden'));
-            ui.settings.saveBtn.addEventListener('click', saveSettings);
+
+            const allSettingsInputs = ui.settings.content.querySelectorAll('input');
+            allSettingsInputs.forEach(input => {
+                const eventType = input.type === 'checkbox' ? 'change' : 'input';
+                input.addEventListener(eventType, saveAndApplySettings);
+            });
         }
 
         function resetUI() {

@@ -77,18 +77,18 @@
             <h2 class="text-2xl font-bold text-white">Settings</h2>
             <button id="close-settings-button" class="text-zinc-400 hover:text-white transition-colors"><i class="fa-solid fa-times fa-xl"></i></button>
         </div>
-        <div id="settings-content" class="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-6">
+        <div class="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-6">
              <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
                 <h3 class="text-lg font-semibold text-white mb-4">Appearance</h3>
                 <div class="theme-selector flex items-center justify-around p-2 bg-zinc-900 rounded-lg">
-                    <span data-theme="amethyst" class="w-8 h-8 rounded-full cursor-pointer bg-purple-500 border-2 border-transparent" style="--tw-shadow-color: #a855f7;"></span>
-                    <span data-theme="emerald" class="w-8 h-8 rounded-full cursor-pointer bg-emerald-500 border-2 border-transparent" style="--tw-shadow-color: #34d399;"></span>
-                    <span data-theme="amber" class="w-8 h-8 rounded-full cursor-pointer bg-amber-500 border-2 border-transparent" style="--tw-shadow-color: #f59e0b;"></span>
-                    <span data-theme="ruby" class="w-8 h-8 rounded-full cursor-pointer bg-red-500 border-2 border-transparent" style="--tw-shadow-color: #ef4444;"></span>
-                    <span data-theme="sapphire" class="w-8 h-8 rounded-full cursor-pointer bg-sky-500 border-2 border-transparent" style="--tw-shadow-color: #38bdf8;"></span>
+                    <span data-theme="amethyst" class="w-8 h-8 rounded-full cursor-pointer bg-purple-500 border-2 border-transparent"></span>
+                    <span data-theme="emerald" class="w-8 h-8 rounded-full cursor-pointer bg-emerald-500 border-2 border-transparent"></span>
+                    <span data-theme="amber" class="w-8 h-8 rounded-full cursor-pointer bg-amber-500 border-2 border-transparent"></span>
+                    <span data-theme="ruby" class="w-8 h-8 rounded-full cursor-pointer bg-red-500 border-2 border-transparent"></span>
+                    <span data-theme="sapphire" class="w-8 h-8 rounded-full cursor-pointer bg-sky-500 border-2 border-transparent"></span>
                 </div>
                 <div class="mt-4 flex items-center gap-4">
-                     <label for="custom-color-picker" class="relative w-10 h-10 rounded-lg border-2 border-zinc-700 cursor-pointer" style="background-color: var(--color-primary);"><input type="color" id="custom-color-picker" class="opacity-0 w-full h-full cursor-pointer"></label>
+                     <label for="custom-color-picker" class="relative w-10 h-10 rounded-lg border-2 border-zinc-700 cursor-pointer"><input type="color" id="custom-color-picker" class="opacity-0 w-full h-full cursor-pointer"></label>
                      <input type="text" id="custom-color-input" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2" placeholder="Or enter a hex code... #a855f7">
                 </div>
             </div>
@@ -99,21 +99,9 @@
                     <label class="form-switch"><input type="checkbox" id="show-viewer-stats-toggle"><span class="slider"></span></label>
                 </div>
             </div>
-            <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                <h3 class="text-lg font-semibold text-white mb-3">Master TTS Control</h3>
-                <div class="flex items-center justify-between p-4 rounded-lg bg-zinc-900">
-                    <span class="font-semibold text-lg text-white">Enable Text-to-Speech</span>
-                    <label class="form-switch"><input type="checkbox" id="tts-enabled-toggle"><span class="slider"></span></label>
-                </div>
-            </div>
-            <div id="tts-config-container" class="space-y-6 transition-opacity duration-300">
-                <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                    <h3 class="text-lg font-semibold text-white mb-3">Credentials</h3>
-                </div>
-            </div>
         </div>
     </div>
-    <div id="live-view" class="view flex-col h-full p-4 space-y-4">
+    <div id="live-view" class="view flex-col h-full w-full p-4 space-y-4">
         <div id="status-bar" class="flex-shrink-0 glass-card p-3 rounded-lg flex justify-between items-center">
             <p id="tracking-status" class="font-semibold text-gray-300"></p>
             <div class="flex items-center gap-4">
@@ -145,7 +133,7 @@
                 </div>
             </div>
             <div class="col-span-2 row-span-1 flex flex-col glass-card rounded-lg p-3">
-                <div class="flex justify-between items-center text-lg font-bold text-gray-200 mb-2 border-b border-zinc-700 pb-2">
+                 <div class="flex justify-between items-center text-lg font-bold text-gray-200 mb-2 border-b border-zinc-700 pb-2">
                     <h2>Activity Feed</h2>
                     <span id="activity-filter-display" class="text-sm font-semibold" style="color: var(--color-primary)">All</span>
                 </div>
@@ -192,9 +180,7 @@
         let chatFilterMode = 'message', activityFilterType = 'all';
         const defaultAvatar = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23404040"/><text x="50" y="55" font-family="Arial" font-size="40" fill="%23fafafa" text-anchor="middle">?</text></svg>')}`;
 
-        const defaultSettings = {
-            theme: 'amethyst', customColor: null, showViewerStats: true,
-        };
+        const defaultSettings = { theme: 'amethyst', customColor: null, showViewerStats: true };
         
         function hexToHsl(hex) {
             let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -308,7 +294,7 @@
                     container = ui.containers.comment;
                     html = `<div class="event-card"><div class="flex items-start space-x-3"><div class="relative viewer-avatar-wrapper">
                         <img src="${data.avatar || defaultAvatar}" class="w-8 h-8 rounded-full mt-1 object-cover">
-                        <div class="viewer-stats-card absolute left-full top-0 ml-2 w-56 p-3 bg-zinc-900/95 border border-zinc-700 rounded-lg shadow-xl z-10 opacity-0 transform scale-95 -translate-y-2 transition-all pointer-events-none">
+                        <div class="viewer-stats-card absolute left-full top-0 ml-2 w-56 p-3 border border-zinc-700 rounded-lg shadow-xl z-10 opacity-0 transform scale-95 -translate-y-2 transition-all pointer-events-none">
                             <p class="font-bold text-white text-sm">${data.nickname || data.user}</p><p class="text-xs text-zinc-400 mb-2">@${data.user}</p>
                             <p class="text-xs text-zinc-300 max-h-16 overflow-auto custom-scrollbar pr-1">${data.bio || 'No bio available.'}</p>
                             <div class="flex justify-between mt-2 text-xs pt-2 border-t border-zinc-700"><p>Followers: <span class="font-bold text-white">${(data.followers||0).toLocaleString()}</span></p><p>Following: <span class="font-bold text-white">${(data.following||0).toLocaleString()}</span></p></div></div></div>
@@ -332,7 +318,7 @@
                     container = ui.containers.activity;
                     html = `<div class="event-card"><div class="flex items-center space-x-3 text-sm p-1.5"><i class="fa-solid ${iconMap[data.type]} w-4 text-center"></i><p class="text-zinc-300"><span class="font-semibold text-white">${data.nickname || data.user}</span> ${textMap[data.type]}</p><p class="text-xs text-zinc-500 ml-auto">${time}</p></div></div>`;
                     break;
-                case 'system_status': ui.status.connection.innerHTML = `<span><i class="fa-solid ${data.level === 'info' ? 'fa-magnifying-glass' : 'fa-circle'} mr-2" style="color:var(--color-primary)"></i>${data.status}</span>`; return;
+                case 'system_status': ui.status.connection.innerHTML = `<span>${statusIcons[data.level] || ''}${data.status}</span>`; return;
                 default: return;
             }
             if (container) addEvent(container, html, data);
@@ -369,13 +355,16 @@
                 ui.chat.filterBtn.title = `Filter by ${chatFilterMode === 'message' ? 'Message' : 'User'}`;
                 filterChat();
             });
-            ui.activity.filterBtn.addEventListener('click', () => ui.activity.filterDropdown.classList.toggle('hidden'));
+            ui.activity.filterBtn.addEventListener('click', (e) => { e.stopPropagation(); ui.activity.filterDropdown.classList.toggle('hidden'); });
+            document.addEventListener('click', () => ui.activity.filterDropdown.classList.add('hidden'));
+
             ui.activity.filterDropdown.addEventListener('click', (e) => {
-                if(e.target.tagName === 'A') { 
-                    activityFilterType = e.target.dataset.filter; 
-                    ui.activity.filterDisplay.textContent = e.target.textContent;
+                e.preventDefault();
+                const anchor = e.target.closest('a');
+                if(anchor) { 
+                    activityFilterType = anchor.dataset.filter; 
+                    ui.activity.filterDisplay.textContent = anchor.textContent;
                     filterActivity(); 
-                    ui.activity.filterDropdown.classList.add('hidden'); 
                 }
             });
 

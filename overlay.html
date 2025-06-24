@@ -16,12 +16,6 @@
             --color-primary-glow: hsl(var(--color-primary-h), 80%, 70%);
             --color-primary-focus: hsl(var(--color-primary-h), 70%, 65%);
         }
-        .theme-amethyst { --color-primary-h: 260; }
-        .theme-emerald { --color-primary-h: 150; }
-        .theme-amber { --color-primary-h: 40; }
-        .theme-ruby { --color-primary-h: 350; }
-        .theme-sapphire { --color-primary-h: 210; }
-
         body { background-color: #111111; font-family: 'Inter', sans-serif; overflow: hidden; color: #a3a3a3; }
         .glowing-avatar { border-color: var(--color-primary); box-shadow: 0 0 15px 2px var(--color-primary-glow); }
         .glass-card { background: rgba(20, 20, 22, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
@@ -29,9 +23,6 @@
         input:focus, select:focus { --tw-ring-color: var(--color-primary-focus) !important; }
         .form-checkbox:checked, .form-radio:checked { background-color: var(--color-primary); }
         input:checked + .slider { background-color: var(--color-primary); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #27272a; border-radius: 20px; }
         .settings-panel { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); transform: translateX(100%); }
         .settings-panel.open { transform: translateX(0); }
         .event-card { animation: slide-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -42,9 +33,6 @@
         .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider:before { transform: translateX(22px); }
         input:disabled, label:has(input:disabled) { opacity: 0.5; cursor: not-allowed !important; }
-        .theme-selector span { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .theme-selector span:hover { transform: scale(1.1); }
-        .theme-selector span.active { transform: scale(1.15); box-shadow: 0 0 10px 2px currentColor; }
         .tab-content, .view { display: none; }
         .tab-content.active, .view.active { display: flex; }
         .view { animation-duration: 0.4s; animation-fill-mode: forwards; }
@@ -53,9 +41,7 @@
         @keyframes view-fade-in { from { opacity: 0; } to { opacity: 1; } }
         @keyframes view-fade-out { from { opacity: 1; } to { opacity: 0; } }
         .viewer-stats-card { display: none; background-color: #18181b; }
-        .show-viewer-stats .viewer-avatar-wrapper:hover .viewer-stats-card {
-            display: block; opacity: 1; transform: scale(1) translateY(0);
-        }
+        .show-viewer-stats .viewer-avatar-wrapper:hover .viewer-stats-card { display: block; opacity: 1; transform: scale(1) translateY(0); }
     </style>
 </head>
 <body class="h-screen bg-black">
@@ -75,16 +61,9 @@
         <div id="settings-content" class="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-6">
              <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
                 <h3 class="text-lg font-semibold text-white mb-4">Appearance</h3>
-                <div class="theme-selector flex items-center justify-around p-2 bg-zinc-900 rounded-lg">
-                    <span data-theme="amethyst" class="w-8 h-8 rounded-full cursor-pointer bg-purple-500 border-2 border-transparent"></span>
-                    <span data-theme="emerald" class="w-8 h-8 rounded-full cursor-pointer bg-emerald-500 border-2 border-transparent"></span>
-                    <span data-theme="amber" class="w-8 h-8 rounded-full cursor-pointer bg-amber-500 border-2 border-transparent"></span>
-                    <span data-theme="ruby" class="w-8 h-8 rounded-full cursor-pointer bg-red-500 border-2 border-transparent"></span>
-                    <span data-theme="sapphire" class="w-8 h-8 rounded-full cursor-pointer bg-sky-500 border-2 border-transparent"></span>
-                </div>
                 <div class="mt-4 flex items-center gap-4">
                      <label for="custom-color-picker" class="relative w-10 h-10 rounded-lg border-2 border-zinc-700 cursor-pointer"><input type="color" id="custom-color-picker" class="opacity-0 w-full h-full cursor-pointer"></label>
-                     <input type="text" id="custom-color-input" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2" placeholder="Or enter a hex code... #a855f7">
+                     <input type="text" id="custom-color-input" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2" placeholder="Enter a hex code... e.g., #a855f7">
                 </div>
             </div>
             <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
@@ -135,7 +114,7 @@
                         <input type="text" id="tts-template-gift" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Gift Template">
                     </div>
                 </div>
-                <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
+                 <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="text-lg font-semibold text-white">Live Status</h3>
                         <button id="tts-clear-queue" class="text-sm text-zinc-400 hover:text-white transition-colors">Clear Queue</button>
@@ -215,7 +194,7 @@
             chat: { search: document.getElementById('chat-search-input'), filterBtn: document.getElementById('chat-filter-button'), filterIcon: document.getElementById('chat-filter-icon') },
             activity: { search: document.getElementById('activity-search-input'), filterBtn: document.getElementById('activity-filter-button'), filterDropdown: document.getElementById('activity-filter-dropdown'), filterDisplay: document.getElementById('activity-filter-display') },
             settings: {
-                panel: document.getElementById('settings-panel'), openBtn: document.getElementById('settings-button'), closeBtn: document.getElementById('close-settings-button'), viewerStats: document.getElementById('show-viewer-stats-toggle'), themeSelectors: document.querySelectorAll('.theme-selector span'), customColorPicker: document.getElementById('custom-color-picker'), customColorInput: document.getElementById('custom-color-input'),
+                panel: document.getElementById('settings-panel'), openBtn: document.getElementById('settings-button'), closeBtn: document.getElementById('close-settings-button'), viewerStats: document.getElementById('show-viewer-stats-toggle'), customColorPicker: document.getElementById('custom-color-picker'), customColorInput: document.getElementById('custom-color-input'),
                 apiKey: document.getElementById('tts-api-key'), voiceId: document.getElementById('tts-voice-id'), testVoiceBtn: document.getElementById('tts-test-voice'), clearQueueBtn: document.getElementById('tts-clear-queue'), enabled: document.getElementById('tts-enabled-toggle'), configContainer: document.getElementById('tts-config-container'),
                 announce: { comment: document.getElementById('tts-announce-comment'), like: document.getElementById('tts-announce-like'), gift: document.getElementById('tts-announce-gift'), follow: document.getElementById('tts-announce-follow'), share: document.getElementById('tts-announce-share'), join: document.getElementById('tts-announce-join'), },
                 templates: { comment: document.getElementById('tts-template-comment'), like: document.getElementById('tts-template-like'), gift: document.getElementById('tts-template-gift'), follow: document.getElementById('tts-template-follow'), share: document.getElementById('tts-template-share'), join: document.getElementById('tts-template-join'), },
@@ -228,7 +207,7 @@
         const defaultAvatar = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23404040"/><text x="50" y="55" font-family="Arial" font-size="40" fill="%23fafafa" text-anchor="middle">?</text></svg>')}`;
 
         const defaultSettings = { 
-            theme: 'amethyst', customColor: null, showViewerStats: true,
+            customColor: '#9333ea', showViewerStats: true,
             tts: {
                 apiKey: '', voiceId: '', enabled: false,
                 announce: { comment: true, like: false, gift: true, follow: true, share: false, join: false },
@@ -248,11 +227,6 @@
         }
 
         function saveAndApplySettings() {
-            if(settings.theme !== 'custom') {
-                let currentTheme = 'amethyst';
-                ui.settings.themeSelectors.forEach(s => { if(s.classList.contains('active')) currentTheme = s.dataset.theme; });
-                settings.theme = currentTheme; settings.customColor = null;
-            }
             settings.showViewerStats = ui.settings.viewerStats.checked;
             settings.tts.apiKey = ui.settings.apiKey.value; settings.tts.voiceId = ui.settings.voiceId.value; settings.tts.enabled = ui.settings.enabled.checked;
             for (const event in settings.tts.announce) {
@@ -264,15 +238,11 @@
         }
 
         function applySettings() {
-            if (settings.customColor) {
-                const hsl = hexToHsl(settings.customColor);
-                if (hsl) { document.documentElement.style.setProperty('--color-primary-h', hsl.h); document.documentElement.style.setProperty('--color-primary-s', `${hsl.s}%`); document.documentElement.style.setProperty('--color-primary-l', `${hsl.l}%`); }
-                document.documentElement.className = '';
-                ui.settings.themeSelectors.forEach(selector => selector.classList.remove('active'));
-            } else { document.documentElement.style.removeProperty('--color-primary-h'); document.documentElement.style.removeProperty('--color-primary-s'); document.documentElement.style.removeProperty('--color-primary-l');
-                document.documentElement.className = `theme-${settings.theme}`;
-                ui.settings.themeSelectors.forEach(selector => selector.classList.toggle('active', selector.dataset.theme === settings.theme));
-            }
+            const color = settings.customColor || defaultSettings.customColor;
+            const hsl = hexToHsl(color);
+            if (hsl) { document.documentElement.style.setProperty('--color-primary-h', hsl.h); document.documentElement.style.setProperty('--color-primary-s', `${hsl.s}%`); document.documentElement.style.setProperty('--color-primary-l', `${hsl.l}%`); }
+            document.querySelector("label[for='custom-color-picker']").style.backgroundColor = color;
+
             ui.containers.commentWrapper.classList.toggle('show-viewer-stats', settings.showViewerStats);
             const isTTSEnabled = settings.tts.enabled;
             ui.settings.configContainer.style.opacity = isTTSEnabled ? '1' : '0.5';
@@ -285,7 +255,7 @@
             if (!settings.tts) settings.tts = defaultSettings.tts;
 
             ui.settings.viewerStats.checked = settings.showViewerStats;
-            if (settings.customColor) ui.settings.customColorInput.value = settings.customColor;
+            ui.settings.customColorInput.value = settings.customColor || defaultSettings.customColor;
             
             ui.settings.apiKey.value = settings.tts.apiKey;
             ui.settings.voiceId.value = settings.tts.voiceId;
@@ -431,9 +401,8 @@
                 input.addEventListener(eventType, saveAndApplySettings);
             });
             
-            ui.settings.themeSelectors.forEach(selector => selector.addEventListener('click', () => { settings.theme = selector.dataset.theme; settings.customColor = null; ui.settings.customColorInput.value = ''; saveAndApplySettings(); }));
-            ui.settings.customColorPicker.addEventListener('input', (e) => { settings.customColor = e.target.value; ui.settings.customColorInput.value = e.target.value; settings.theme = 'custom'; saveAndApplySettings(); });
-            ui.settings.customColorInput.addEventListener('input', (e) => { const hex = e.target.value; if (/^#([0-9A-F]{3}){1,2}$/i.test(hex)) { settings.customColor = hex; settings.theme = 'custom'; saveAndApplySettings(); } });
+            ui.settings.customColorPicker.addEventListener('input', (e) => { settings.customColor = e.target.value; ui.settings.customColorInput.value = e.target.value; saveAndApplySettings(); });
+            ui.settings.customColorInput.addEventListener('input', (e) => { const hex = e.target.value; if (/^#([0-9A-F]{3}){1,2}$/i.test(hex)) { settings.customColor = hex; saveAndApplySettings(); } });
             
             ui.tabButtons.forEach(button => button.addEventListener('click', () => {
                 ui.tabButtons.forEach(btn => btn.classList.remove('active'));

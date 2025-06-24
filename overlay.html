@@ -152,7 +152,7 @@
             </div>
         </div>
     </div>
-    <div id="live-view" class="view flex-col h-full p-4 space-y-4">
+    <div id="live-view" class="view flex-col h-full w-full p-4 space-y-4">
         <div id="status-bar" class="flex-shrink-0 glass-card p-3 rounded-lg flex justify-between items-center">
             <p id="tracking-status" class="font-semibold text-gray-300"></p>
             <div class="flex items-center gap-4">
@@ -232,9 +232,8 @@
             }
         };
 
-        let ttsQueue = [], isSpeaking = false, settings = {}, topGifters = {};
+        let settings = {}, topGifters = {};
         let chatFilterMode = 'message', activityFilterType = 'all';
-        const silentAudio = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
         const defaultAvatar = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23404040"/><text x="50" y="55" font-family="Arial" font-size="40" fill="%23fafafa" text-anchor="middle">?</text></svg>')}`;
 
         const defaultSettings = {
@@ -246,6 +245,16 @@
             }
         };
         
+        const statusIcons = {
+            live: '<i class="fa-solid fa-circle text-green-500 mr-2"></i>',
+            offline: '<i class="fa-solid fa-circle text-gray-500 mr-2"></i>',
+            ended: '<i class="fa-solid fa-circle-xmark text-red-500 mr-2"></i>',
+            disconnected: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
+            error: '<i class="fa-solid fa-bug text-red-500 mr-2"></i>',
+            warn: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
+            info: '<i class="fa-solid fa-magnifying-glass mr-2" style="color:var(--color-primary)"></i>'
+        };
+
         function hexToHsl(hex) {
             let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             if (!result) return null;
@@ -307,38 +316,7 @@
             }
             applySettings();
         }
-
-        async function playTTS(text, isTest = false) {
-            if (!text || text.trim() === '') { if(!isTest) { isSpeaking = false; processTTSQueue(); } return; }
-            if (!settings.tts.apiKey || !settings.tts.voiceId) {
-                if(!isTest) { isSpeaking = false; setTimeout(processTTSQueue, 3000); } return;
-            }
-            try {
-                const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${settings.tts.voiceId}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'xi-api-key': settings.tts.apiKey },
-                    body: JSON.stringify({ text, model_id: "eleven_turbo_v2" })
-                });
-                if (!response.ok) throw new Error("ElevenLabs API Error");
-                const blob = await response.blob();
-                const audio = new Audio(URL.createObjectURL(blob));
-                if (!isTest) { audio.onended = () => { isSpeaking = false; processTTSQueue(); }; }
-                await audio.play();
-            } catch (error) { if (!isTest) { isSpeaking = false; setTimeout(processTTSQueue, 5000); } }
-        }
         
-        function processTTSQueue() {
-            if (isSpeaking || ttsQueue.length === 0 || !settings.tts.enabled) return;
-            isSpeaking = true; const text = ttsQueue.shift(); playTTS(text);
-        }
-        
-        function addToTTSQueue(data, type) {
-            if (!settings.tts.enabled || !settings.tts.announce[type]) return;
-            if (type === 'comment' && (!data.comment || data.comment.trim() === '')) return;
-            const template = settings.tts.templates[type]; if (!template) return;
-            const formattedText = template.replace(/{user}/g, data.user).replace(/{comment}/g, data.comment).replace(/{count}/g, data.count).replace(/{gift_name}/g, data.gift_name);
-            if (formattedText) { ttsQueue.push(formattedText); processTTSQueue(); }
-        }
-
         function renderTopGifters() {
             const sortedGifters = Object.entries(topGifters).sort((a, b) => b[1].totalCoins - a[1].totalCoins);
             if(sortedGifters.length === 0) { ui.containers.topGifters.innerHTML = '<p class="text-center italic text-zinc-500 pt-4">No gifts received yet.</p>'; return; }
@@ -349,8 +327,8 @@
             const wrapper = document.createElement('div');
             wrapper.innerHTML = htmlContent;
             const newEvent = wrapper.firstElementChild;
-            if (newEvent) { newEvent.dataset.user = data.user || ''; newEvent.dataset.comment = data.comment || ''; newEvent.dataset.type = data.type || '';
-                container.appendChild(newEvent); if (container.children.length > 100) container.firstElementChild.remove(); container.scrollTop = container.scrollHeight;
+            if (newEvent) { newEvent.dataset.user = data.nickname || data.user || ''; newEvent.dataset.comment = data.comment || ''; newEvent.dataset.type = data.type || '';
+                container.appendChild(newEvent); if (container.children.length > 200) container.firstElementChild.remove(); container.scrollTop = container.scrollHeight;
             }
         }
 
@@ -380,7 +358,6 @@
         function processEvent(data) {
             let html, container;
             const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            if (data.type !== 'system_status') addToTTSQueue(data, data.type);
             switch (data.type) {
                 case 'status_update': data.status === 'live' ? switchView('live') : handleStreamEnd(); return;
                 case 'profile_info':
@@ -446,7 +423,7 @@
         }
         
         function setupEventListeners() {
-            ui.settings.openBtn.addEventListener('click', () => { new Audio(silentAudio).play().catch(e => {}); ui.settings.panel.classList.add('open'); });
+            ui.settings.openBtn.addEventListener('click', () => ui.settings.panel.classList.add('open'));
             ui.settings.closeBtn.addEventListener('click', () => ui.settings.panel.classList.remove('open'));
             ui.chat.search.addEventListener('input', filterChat);
             ui.activity.search.addEventListener('input', filterActivity);

@@ -13,6 +13,7 @@ from TikTokLive.events import (
 )
 import uvicorn
 from typing import Any, Dict
+from html import escape
 
 app = FastAPI()
 
@@ -23,7 +24,7 @@ async def send_json_safe(websocket: WebSocket, data: Dict[str, Any]):
         if websocket.application_state == WebSocketState.CONNECTED:
             await websocket.send_json(data)
     except (WebSocketDisconnect, RuntimeError):
-        logging.warning(f"Failed to send JSON data for user; connection is closed.")
+        logging.warning(f"Failed to send JSON data for user {websocket.path_params.get('username')}; connection is closed.")
 
 def parse_user_data(user: Any) -> Dict[str, Any]:
     avatar_url = None
@@ -101,6 +102,7 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
         await send_json_safe(websocket, {"type": "system_status", "status": "Connected & Listening", "level": "info"})
 
     async def forward_event(data: dict):
+        logging.info(f"Sending event '{data.get('type')}' to client for @{client.unique_id}")
         await send_json_safe(websocket, data)
 
     @client.on(CommentEvent)
@@ -196,26 +198,43 @@ async def get_overlay_for_user(username: str):
             html_content = f.read()
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Error: overlay.html not found. Place it in the same directory as the server.</h1>", status_code=500)
+    
+    profile_data = await get_user_profile_from_web(username)
+    if profile_data:
+        title = escape(f"{profile_data.get('nickname', username)}'s Live | TikTok Tracker")
+        description = escape(profile_data.get('bio', "Track any TikTok user's livestream."))
+        icon = escape(profile_data.get('avatar', ''))
+        html_content = html_content.replace("__PAGE_TITLE__", title).replace("__PAGE_DESCRIPTION__", description).replace("__PAGE_ICON__", icon)
+    else:
+        html_content = html_content.replace("__PAGE_TITLE__", f"@{username} | TikTok Tracker")
+
     return HTMLResponse(content=html_content)
+
 
 @app.websocket("/ws/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
     await websocket.accept()
     client = TikTokLiveClient(unique_id=f"@{username.lower()}")
     tiktok_task = None
+
+    async def _client_loop():
+        try:
+            is_live = await client.is_live()
+            if is_live:
+                await handle_tiktok_events(client, websocket)
+            else:
+                await handle_offline_user(username, websocket)
+        except Exception as e:
+            logging.error(f"Error in client loop for @{username}: {e}")
+            await send_json_safe(websocket, {"type": "system_status", "status": f"Error: {e}", "level": "error"})
+
+    tiktok_task = asyncio.create_task(_client_loop())
+
     try:
-        is_live = await client.is_live()
-        if is_live:
-            tiktok_task = asyncio.create_task(handle_tiktok_events(client, websocket))
-        else:
-            tiktok_task = asyncio.create_task(handle_offline_user(username, websocket))
-        
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         logging.warning(f"WebSocket client for @{username} disconnected.")
-    except Exception as e:
-        logging.error(f"An unexpected error occurred for @{username}: {e}")
     finally:
         if tiktok_task and not tiktok_task.done():
             tiktok_task.cancel()
@@ -224,5 +243,4 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
         logging.info(f"Connection closed and tasks cleaned up for @{username}.")
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     uvicorn.run(app, host="0.0.0.0", port=8000)

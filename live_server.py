@@ -21,7 +21,7 @@ async def send_json_safe(websocket: WebSocket, data: Dict[str, Any]):
         if websocket.application_state == WebSocketState.CONNECTED:
             await websocket.send_json(data)
     except (WebSocketDisconnect, RuntimeError):
-        logging.warning("Failed to send JSON data for user; connection is closed.")
+        logging.warning(f"Failed to send JSON data for user; connection is closed.")
 
 def parse_user_data(user: Any) -> Dict[str, Any]:
     avatar_url = None
@@ -143,13 +143,19 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
     async def on_gift(event: GiftEvent):
         if event.gift.streakable and event.streaking:
             return
+        
         user_data = parse_user_data(event.user)
+        
+        gift_image_url = None
+        if event.gift.image and hasattr(event.gift.image, 'url_list') and event.gift.image.url_list:
+            gift_image_url = event.gift.image.url_list[0]
+
         user_data.update({
             "type": "gift",
             "gift_name": event.gift.name,
             "count": event.repeat_count,
             "coins": event.gift.diamond_count,
-            "gift_image_url": event.gift.image.url_list[0] if event.gift.image else None,
+            "gift_image_url": gift_image_url,
             "userId": event.user.id
         })
         await forward_event(user_data)

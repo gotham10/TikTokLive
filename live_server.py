@@ -32,9 +32,7 @@ def parse_user_data(user: Any) -> Dict[str, Any]:
     followers = follow_info.follower_count if follow_info and hasattr(follow_info, 'follower_count') else 0
     following = follow_info.following_count if follow_info and hasattr(follow_info, 'following_count') else 0
     
-    bio = ""
-    if hasattr(user, 'bio_description'):
-        bio = user.bio_description
+    bio = getattr(user, 'bio_description', "")
 
     return {
         "user": getattr(user, 'unique_id', 'N/A'),
@@ -136,7 +134,7 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
     @client.on(LikeEvent)
     async def on_like(event: LikeEvent):
         user_data = parse_user_data(event.user)
-        user_data.update({"type": "like", "count": event.like_count})
+        user_data.update({"type": "like", "count": event.count})
         await forward_event(user_data)
         if hasattr(event, 'total_likes'):
             await forward_event({"type": "total_likes_update", "count": event.total_likes})
@@ -179,8 +177,11 @@ async def handle_offline_user(username: str, websocket: WebSocket):
 
 @app.get("/")
 async def read_root():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
+    try:
+        with open("index.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Error: index.html not found. Place it in the same directory as the server.</h1>", status_code=500)
 
 @app.get("/{username}")
 async def get_overlay_for_user(username: str):
@@ -188,7 +189,7 @@ async def get_overlay_for_user(username: str):
         with open("overlay.html", "r", encoding="utf-8") as f:
             html_content = f.read()
     except FileNotFoundError:
-        return HTMLResponse(content="<h1>Error: overlay.html not found.</h1>", status_code=500)
+        return HTMLResponse(content="<h1>Error: overlay.html not found. Place it in the same directory as the server.</h1>", status_code=500)
     return HTMLResponse(content=html_content)
 
 @app.websocket("/ws/{username}")

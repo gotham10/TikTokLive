@@ -13,7 +13,6 @@ from TikTokLive.events import (
 )
 import uvicorn
 from typing import Any, Dict
-from html import escape
 
 app = FastAPI()
 
@@ -30,27 +29,30 @@ def parse_user_data(user: Any) -> Dict[str, Any]:
         avatar_url = user.avatar.url_list[0]
 
     follow_info = getattr(user, 'follow_info', None)
-    followers = follow_info.follower_count if follow_info else 0
-    following = follow_info.following_count if follow_info else 0
+    followers = follow_info.follower_count if follow_info and hasattr(follow_info, 'follower_count') else 0
+    following = follow_info.following_count if follow_info and hasattr(follow_info, 'following_count') else 0
+    
+    bio = ""
+    if hasattr(user, 'bio_description'):
+        bio = user.bio_description
 
     return {
-        "user": user.unique_id,
-        "nickname": user.nickname,
+        "user": getattr(user, 'unique_id', 'N/A'),
+        "nickname": getattr(user, 'nickname', 'N/A'),
         "avatar": avatar_url,
         "followers": followers,
-        "following": following
+        "following": following,
+        "bio": bio
     }
 
 def parse_live_profile_data(data: Any) -> Dict[str, Any]:
-    if isinstance(data, dict) and 'follow_info' in data:
-        follow_info = data.get('follow_info', {})
-        avatar_thumb = data.get('avatar_thumb', {})
+    if isinstance(data, dict):
         return {
             "nickname": data.get('nickname', 'N/A'),
             "username": data.get('display_id', 'N/A'),
-            "avatar": avatar_thumb.get('url_list', [None])[0] if avatar_thumb else None,
-            "followers": follow_info.get('follower_count', 0),
-            "following": follow_info.get('following_count', 0),
+            "avatar": data.get('avatar_thumb', {}).get('url_list', [None])[0],
+            "followers": data.get('follow_info', {}).get('follower_count', 0),
+            "following": data.get('follow_info', {}).get('following_count', 0),
             "bio": data.get('bio_description', '').replace('\n', ' ')
         }
     return {}
@@ -187,16 +189,6 @@ async def get_overlay_for_user(username: str):
             html_content = f.read()
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Error: overlay.html not found.</h1>", status_code=500)
-
-    profile_data = await get_user_profile_from_web(username)
-    if profile_data:
-        title = escape(f"{profile_data.get('nickname', username)}'s Live | TikTok API Tracker")
-        description = escape(profile_data.get('bio', "Track any TikTok user's livestream instantly."))
-        icon = escape(profile_data.get('avatar', ''))
-        html_content = html_content.replace("__PAGE_TITLE__", title).replace("__PAGE_DESCRIPTION__", description).replace("__PAGE_ICON__", icon)
-    else:
-        html_content = html_content.replace("__PAGE_TITLE__", f"@{username} | TikTok API Tracker")
-    
     return HTMLResponse(content=html_content)
 
 @app.websocket("/ws/{username}")

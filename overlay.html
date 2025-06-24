@@ -57,12 +57,9 @@
         .view.fade-out { animation-name: view-fade-out; }
         @keyframes view-fade-in { from { opacity: 0; } to { opacity: 1; } }
         @keyframes view-fade-out { from { opacity: 1; } to { opacity: 0; } }
-        .viewer-stats-card { display: none; }
-        .show-viewer-stats .viewer-stats-card { display: block; }
-        .viewer-avatar-wrapper:hover .viewer-stats-card {
-            display: block;
-            opacity: 1;
-            transform: scale(1) translateY(0);
+        .viewer-stats-card { display: none; background: rgba(20, 20, 22, 0.95); backdrop-filter: blur(8px); }
+        .show-viewer-stats .viewer-avatar-wrapper:hover .viewer-stats-card {
+            display: block; opacity: 1; transform: scale(1) translateY(0);
         }
     </style>
 </head>
@@ -112,47 +109,11 @@
             <div id="tts-config-container" class="space-y-6 transition-opacity duration-300">
                 <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
                     <h3 class="text-lg font-semibold text-white mb-3">Credentials</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="tts-api-key" class="block text-sm font-medium text-gray-300 mb-2">ElevenLabs API Key</label>
-                            <input type="password" id="tts-api-key" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2">
-                        </div>
-                        <div class="relative">
-                            <label for="tts-voice-id" class="block text-sm font-medium text-gray-300 mb-2">Voice ID</label>
-                            <input type="text" id="tts-voice-id" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 pr-10">
-                            <button id="tts-test-voice" class="absolute right-2 top-9 text-zinc-400 hover:text-white"><i class="fa-solid fa-play"></i></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                    <h3 class="text-lg font-semibold text-white mb-3">Event Configuration</h3>
-                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-join" class="form-checkbox h-5 w-5 border-zinc-600"> <span class="text-gray-300">Announce Joins</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-follow" class="form-checkbox h-5 w-5 border-zinc-600"> <span class="text-gray-300">Announce Follows</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-share" class="form-checkbox h-5 w-5 border-zinc-600"> <span class="text-gray-300">Announce Shares</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-like" class="form-checkbox h-5 w-5 border-zinc-600"> <span class="text-gray-300">Announce Likes</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-comment" class="form-checkbox h-5 w-5 border-zinc-600"> <span class="text-gray-300">Announce Comments</span></label>
-                        <label class="flex items-center space-x-3 bg-zinc-800 p-3 rounded-lg cursor-pointer hover:bg-zinc-700/80 transition-colors"><input type="checkbox" id="tts-announce-gift" class="form-checkbox h-5 w-5 border-zinc-600"> <span class="text-gray-300">Announce Gifts</span></label>
-                    </div>
-                    <div class="mt-6 space-y-3">
-                        <input type="text" id="tts-template-join" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 transition-opacity" placeholder="Join Template">
-                        <input type="text" id="tts-template-follow" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 transition-opacity" placeholder="Follow Template">
-                        <input type="text" id="tts-template-share" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 transition-opacity" placeholder="Share Template">
-                        <input type="text" id="tts-template-like" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 transition-opacity" placeholder="Like Template">
-                        <input type="text" id="tts-template-comment" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 transition-opacity" placeholder="Comment Template">
-                        <input type="text" id="tts-template-gift" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 focus:outline-none focus:ring-2 transition-opacity" placeholder="Gift Template">
-                    </div>
-                </div>
-                <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-semibold text-white">Live Status</h3>
-                        <button id="tts-clear-queue" class="text-sm text-zinc-400 hover:text-white transition-colors">Clear Queue</button>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div id="live-view" class="view flex-col h-full w-full p-4 space-y-4">
+    <div id="live-view" class="view flex-col h-full p-4 space-y-4">
         <div id="status-bar" class="flex-shrink-0 glass-card p-3 rounded-lg flex justify-between items-center">
             <p id="tracking-status" class="font-semibold text-gray-300"></p>
             <div class="flex items-center gap-4">
@@ -184,7 +145,10 @@
                 </div>
             </div>
             <div class="col-span-2 row-span-1 flex flex-col glass-card rounded-lg p-3">
-                <h2 class="text-lg font-bold text-gray-200 mb-2 border-b border-zinc-700 pb-2">Activity Feed</h2>
+                <div class="flex justify-between items-center text-lg font-bold text-gray-200 mb-2 border-b border-zinc-700 pb-2">
+                    <h2>Activity Feed</h2>
+                    <span id="activity-filter-display" class="text-sm font-semibold" style="color: var(--color-primary)">All</span>
+                </div>
                 <div class="flex items-center space-x-2 mb-2 flex-shrink-0">
                     <input type="text" id="activity-search-input" class="bg-zinc-800 text-gray-300 text-sm rounded-md w-full px-3 py-1.5 border border-transparent focus:outline-none focus:ring-2" placeholder="Search users...">
                      <div class="relative">
@@ -192,11 +156,11 @@
                             <i class="fa-solid fa-filter"></i>
                         </button>
                         <div id="activity-filter-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-zinc-800 rounded-md shadow-lg z-10">
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="all"><i class="fa-solid fa-asterisk w-4 text-center mr-2"></i>All</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="gift"><i class="fa-solid fa-gift w-4 text-center mr-2"></i>Gifts</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="follow"><i class="fa-solid fa-user-plus w-4 text-center mr-2"></i>Follows</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="share"><i class="fa-solid fa-share w-4 text-center mr-2"></i>Shares</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="join"><i class="fa-solid fa-right-to-bracket w-4 text-center mr-2"></i>Joins</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="all">All</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="gift">Gifts</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="follow">Follows</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="share">Shares</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="join">Joins</a>
                         </div>
                     </div>
                 </div>
@@ -212,23 +176,15 @@
             tabPanes: document.querySelectorAll('.tab-content'),
             tabButtons: document.querySelectorAll('.tab-button'),
             chat: { search: document.getElementById('chat-search-input'), filterBtn: document.getElementById('chat-filter-button'), filterIcon: document.getElementById('chat-filter-icon') },
-            activity: { search: document.getElementById('activity-search-input'), filterBtn: document.getElementById('activity-filter-button'), filterDropdown: document.getElementById('activity-filter-dropdown') },
+            activity: { search: document.getElementById('activity-search-input'), filterBtn: document.getElementById('activity-filter-button'), filterDropdown: document.getElementById('activity-filter-dropdown'), filterDisplay: document.getElementById('activity-filter-display') },
             settings: {
                 panel: document.getElementById('settings-panel'),
                 openBtn: document.getElementById('settings-button'),
                 closeBtn: document.getElementById('close-settings-button'),
-                apiKey: document.getElementById('tts-api-key'),
-                voiceId: document.getElementById('tts-voice-id'),
-                testVoiceBtn: document.getElementById('tts-test-voice'),
-                clearQueueBtn: document.getElementById('tts-clear-queue'),
-                enabled: document.getElementById('tts-enabled-toggle'),
                 viewerStats: document.getElementById('show-viewer-stats-toggle'),
-                configContainer: document.getElementById('tts-config-container'),
                 themeSelectors: document.querySelectorAll('.theme-selector span'),
                 customColorPicker: document.getElementById('custom-color-picker'),
                 customColorInput: document.getElementById('custom-color-input'),
-                announce: { comment: document.getElementById('tts-announce-comment'), like: document.getElementById('tts-announce-like'), gift: document.getElementById('tts-announce-gift'), follow: document.getElementById('tts-announce-follow'), share: document.getElementById('tts-announce-share'), join: document.getElementById('tts-announce-join'), },
-                templates: { comment: document.getElementById('tts-template-comment'), like: document.getElementById('tts-template-like'), gift: document.getElementById('tts-template-gift'), follow: document.getElementById('tts-template-follow'), share: document.getElementById('tts-template-share'), join: document.getElementById('tts-template-join'), },
             }
         };
 
@@ -238,23 +194,8 @@
 
         const defaultSettings = {
             theme: 'amethyst', customColor: null, showViewerStats: true,
-            tts: {
-                apiKey: '', voiceId: '21m00Tcm4TlvDq8ikWAM', enabled: false,
-                announce: { comment: true, like: false, gift: true, follow: true, share: false, join: false },
-                templates: { comment: '{user} said: {comment}', like: '{user} sent {count} likes', gift: '{user} sent {count} {gift_name}', follow: '{user} followed', share: '{user} shared the stream', join: '{user} joined' }
-            }
         };
         
-        const statusIcons = {
-            live: '<i class="fa-solid fa-circle text-green-500 mr-2"></i>',
-            offline: '<i class="fa-solid fa-circle text-gray-500 mr-2"></i>',
-            ended: '<i class="fa-solid fa-circle-xmark text-red-500 mr-2"></i>',
-            disconnected: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
-            error: '<i class="fa-solid fa-bug text-red-500 mr-2"></i>',
-            warn: '<i class="fa-solid fa-triangle-exclamation text-yellow-400 mr-2"></i>',
-            info: '<i class="fa-solid fa-magnifying-glass mr-2" style="color:var(--color-primary)"></i>'
-        };
-
         function hexToHsl(hex) {
             let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             if (!result) return null;
@@ -273,11 +214,6 @@
                 settings.theme = currentTheme; settings.customColor = null;
             }
             settings.showViewerStats = ui.settings.viewerStats.checked;
-            settings.tts.apiKey = ui.settings.apiKey.value; settings.tts.voiceId = ui.settings.voiceId.value; settings.tts.enabled = ui.settings.enabled.checked;
-            for (const event in settings.tts.announce) {
-                settings.tts.announce[event] = ui.settings.announce[event].checked;
-                settings.tts.templates[event] = ui.settings.templates[event].value;
-            }
             localStorage.setItem('liveTrackerSettings', JSON.stringify(settings));
             applySettings();
         }
@@ -293,27 +229,13 @@
                 ui.settings.themeSelectors.forEach(selector => selector.classList.toggle('active', selector.dataset.theme === settings.theme));
             }
             ui.containers.commentWrapper.classList.toggle('show-viewer-stats', settings.showViewerStats);
-            const isTTSEnabled = settings.tts.enabled;
-            ui.settings.configContainer.style.opacity = isTTSEnabled ? '1' : '0.5';
-            ui.settings.configContainer.style.pointerEvents = isTTSEnabled ? 'auto' : 'none';
-            for (const event in ui.settings.announce) { ui.settings.templates[event].disabled = !ui.settings.announce[event].checked; }
         }
 
         function loadSettings() {
             const savedSettings = localStorage.getItem('liveTrackerSettings');
             settings = savedSettings ? JSON.parse(savedSettings) : defaultSettings;
-            if (!settings.tts) settings.tts = defaultSettings.tts;
             if (settings.customColor) ui.settings.customColorInput.value = settings.customColor;
-            
-            ui.settings.apiKey.value = settings.tts.apiKey;
-            ui.settings.voiceId.value = settings.tts.voiceId;
-            ui.settings.enabled.checked = settings.tts.enabled;
             ui.settings.viewerStats.checked = settings.showViewerStats;
-
-            for (const event in settings.tts.announce) {
-                if(ui.settings.announce[event]) ui.settings.announce[event].checked = settings.tts.announce[event];
-                if(ui.settings.templates[event]) ui.settings.templates[event].value = settings.tts.templates[event];
-            }
             applySettings();
         }
         
@@ -327,8 +249,18 @@
             const wrapper = document.createElement('div');
             wrapper.innerHTML = htmlContent;
             const newEvent = wrapper.firstElementChild;
-            if (newEvent) { newEvent.dataset.user = data.nickname || data.user || ''; newEvent.dataset.comment = data.comment || ''; newEvent.dataset.type = data.type || '';
-                container.appendChild(newEvent); if (container.children.length > 200) container.firstElementChild.remove(); container.scrollTop = container.scrollHeight;
+            if (newEvent) { 
+                newEvent.dataset.user = data.nickname || data.user || ''; 
+                newEvent.dataset.comment = data.comment || ''; 
+                newEvent.dataset.type = data.type || '';
+                container.appendChild(newEvent); 
+                if (container.children.length > 200) container.firstElementChild.remove(); 
+                container.scrollTop = container.scrollHeight;
+                if (container === ui.containers.comment) {
+                    filterChat(newEvent);
+                } else if (container === ui.containers.activity) {
+                    filterActivity(newEvent);
+                }
             }
         }
 
@@ -376,8 +308,10 @@
                     container = ui.containers.comment;
                     html = `<div class="event-card"><div class="flex items-start space-x-3"><div class="relative viewer-avatar-wrapper">
                         <img src="${data.avatar || defaultAvatar}" class="w-8 h-8 rounded-full mt-1 object-cover">
-                        <div class="viewer-stats-card absolute left-full top-0 ml-2 w-48 p-2 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-10 opacity-0 transform scale-95 -translate-y-2 transition-all pointer-events-none">
-                            <p class="font-bold text-white text-sm">${data.nickname || data.user}</p><p class="text-xs text-zinc-400">@${data.user}</p><div class="flex justify-between mt-2 text-xs"><p>Followers: <span class="font-bold text-white">${(data.followers||0).toLocaleString()}</span></p><p>Following: <span class="font-bold text-white">${(data.following||0).toLocaleString()}</span></p></div></div></div>
+                        <div class="viewer-stats-card absolute left-full top-0 ml-2 w-56 p-3 bg-zinc-900/95 border border-zinc-700 rounded-lg shadow-xl z-10 opacity-0 transform scale-95 -translate-y-2 transition-all pointer-events-none">
+                            <p class="font-bold text-white text-sm">${data.nickname || data.user}</p><p class="text-xs text-zinc-400 mb-2">@${data.user}</p>
+                            <p class="text-xs text-zinc-300 max-h-16 overflow-auto custom-scrollbar pr-1">${data.bio || 'No bio available.'}</p>
+                            <div class="flex justify-between mt-2 text-xs pt-2 border-t border-zinc-700"><p>Followers: <span class="font-bold text-white">${(data.followers||0).toLocaleString()}</span></p><p>Following: <span class="font-bold text-white">${(data.following||0).toLocaleString()}</span></p></div></div></div>
                         <div class="flex-grow"><p class="text-sm"><span class="font-bold text-gray-200">${data.nickname || data.user}:</span> <span class="text-gray-300">${data.comment}</span></p>
                         <p class="text-xs text-zinc-500">${time}</p></div></div></div>`;
                     break;
@@ -398,35 +332,37 @@
                     container = ui.containers.activity;
                     html = `<div class="event-card"><div class="flex items-center space-x-3 text-sm p-1.5"><i class="fa-solid ${iconMap[data.type]} w-4 text-center"></i><p class="text-zinc-300"><span class="font-semibold text-white">${data.nickname || data.user}</span> ${textMap[data.type]}</p><p class="text-xs text-zinc-500 ml-auto">${time}</p></div></div>`;
                     break;
-                case 'system_status': ui.status.connection.innerHTML = `<span>${statusIcons[data.level] || ''}${data.status}</span>`; return;
+                case 'system_status': ui.status.connection.innerHTML = `<span><i class="fa-solid ${data.level === 'info' ? 'fa-magnifying-glass' : 'fa-circle'} mr-2" style="color:var(--color-primary)"></i>${data.status}</span>`; return;
                 default: return;
             }
             if (container) addEvent(container, html, data);
         }
 
-        function filterChat() {
+        function filterChat(card) {
+            const cards = card ? [card] : ui.containers.comment.querySelectorAll('.event-card');
             const query = ui.chat.search.value.toLowerCase();
-            ui.containers.comment.querySelectorAll('.event-card').forEach(card => {
-                const user = card.dataset.user.toLowerCase(); const message = card.dataset.comment.toLowerCase();
+            cards.forEach(c => {
+                const user = c.dataset.user.toLowerCase(); const message = c.dataset.comment.toLowerCase();
                 const match = chatFilterMode === 'user' ? user.includes(query) : message.includes(query);
-                card.style.display = match ? '' : 'none';
+                c.style.display = match ? '' : 'none';
             });
         }
-        function filterActivity() {
+        function filterActivity(card) {
+            const cards = card ? [card] : ui.containers.activity.querySelectorAll('.event-card');
             const query = ui.activity.search.value.toLowerCase();
-            ui.containers.activity.querySelectorAll('.event-card').forEach(card => {
-                const user = card.dataset.user.toLowerCase(); const type = card.dataset.type;
+            cards.forEach(c => {
+                const user = c.dataset.user.toLowerCase(); const type = c.dataset.type;
                 const typeMatch = activityFilterType === 'all' || activityFilterType === type;
                 const userMatch = user.includes(query);
-                card.style.display = typeMatch && userMatch ? '' : 'none';
+                c.style.display = typeMatch && userMatch ? '' : 'none';
             });
         }
         
         function setupEventListeners() {
             ui.settings.openBtn.addEventListener('click', () => ui.settings.panel.classList.add('open'));
             ui.settings.closeBtn.addEventListener('click', () => ui.settings.panel.classList.remove('open'));
-            ui.chat.search.addEventListener('input', filterChat);
-            ui.activity.search.addEventListener('input', filterActivity);
+            ui.chat.search.addEventListener('input', () => filterChat());
+            ui.activity.search.addEventListener('input', () => filterActivity());
             ui.chat.filterBtn.addEventListener('click', () => {
                 chatFilterMode = chatFilterMode === 'message' ? 'user' : 'message';
                 ui.chat.filterIcon.className = `fa-solid fa-${chatFilterMode === 'message' ? 'message' : 'user'}`;
@@ -435,7 +371,12 @@
             });
             ui.activity.filterBtn.addEventListener('click', () => ui.activity.filterDropdown.classList.toggle('hidden'));
             ui.activity.filterDropdown.addEventListener('click', (e) => {
-                if(e.target.tagName === 'A') { activityFilterType = e.target.dataset.filter; filterActivity(); ui.activity.filterDropdown.classList.add('hidden'); }
+                if(e.target.tagName === 'A') { 
+                    activityFilterType = e.target.dataset.filter; 
+                    ui.activity.filterDisplay.textContent = e.target.textContent;
+                    filterActivity(); 
+                    ui.activity.filterDropdown.classList.add('hidden'); 
+                }
             });
 
             const allSettingsInputs = document.querySelectorAll('#settings-content input');

@@ -11,7 +11,6 @@ from TikTokLive.events import (
     ConnectEvent, CommentEvent, FollowEvent, ShareEvent, GiftEvent,
     DisconnectEvent, LiveEndEvent, LikeEvent, JoinEvent, SubscribeEvent
 )
-from TikTokLive.objects import User
 import uvicorn
 from typing import Any, Dict
 from html import escape
@@ -23,11 +22,11 @@ async def send_json_safe(websocket: WebSocket, data: Dict[str, Any]):
         if websocket.application_state == WebSocketState.CONNECTED:
             await websocket.send_json(data)
     except (WebSocketDisconnect, RuntimeError):
-        logging.warning("Failed to send JSON data; connection is closed.")
+        logging.warning("Failed to send JSON data for user; connection is closed.")
 
-def parse_user_data(user: User) -> Dict[str, Any]:
+def parse_user_data(user: Any) -> Dict[str, Any]:
     avatar_url = None
-    if user.avatar and user.avatar.url_list:
+    if hasattr(user, 'avatar') and user.avatar and hasattr(user.avatar, 'url_list') and user.avatar.url_list:
         avatar_url = user.avatar.url_list[0]
 
     follow_info = getattr(user, 'follow_info', None)
@@ -81,7 +80,6 @@ async def get_user_profile_from_web(username: str) -> Dict[str, Any] | None:
                 "followers": stats.get("followerCount", 0),
                 "following": stats.get("followingCount", 0),
                 "bio": user.get("signature", "Bio not available.").replace('\n', ' '),
-                "likes": stats.get("heartCount", 0)
             }
     except Exception as e:
         logging.error(f"Exception during web scraping for @{username}: {e}")
@@ -95,12 +93,10 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
         profile_data = parse_live_profile_data(owner) if owner else {}
         if profile_data:
             await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
-        initial_likes = client.room_info.get('like_count', 0)
-        await send_json_safe(websocket, {"type": "total_likes_update", "count": initial_likes})
         if client.room_info:
             await send_json_safe(websocket, {"type": "room_info_update", "data": client.room_info})
         await send_json_safe(websocket, {"type": "status_update", "status": "live"})
-        await send_json_safe(websocket, {"type": "system_status", "status": "Connected & Listening", "level": "live"})
+        await send_json_safe(websocket, {"type": "system_status", "status": "Connected & Listening", "level": "info"})
 
     async def forward_event(data: dict):
         await send_json_safe(websocket, data)
@@ -138,7 +134,7 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
     @client.on(LikeEvent)
     async def on_like(event: LikeEvent):
         user_data = parse_user_data(event.user)
-        user_data.update({"type": "like", "count": event.count})
+        user_data.update({"type": "like", "count": event.like_count})
         await forward_event(user_data)
         if hasattr(event, 'total_likes'):
             await forward_event({"type": "total_likes_update", "count": event.total_likes})
@@ -173,12 +169,10 @@ async def handle_offline_user(username: str, websocket: WebSocket):
     await send_json_safe(websocket, {"type": "system_status", "status": f"User is offline. Scraping profile...", "level": "info"})
     profile_data = await get_user_profile_from_web(username)
     if not profile_data:
-        profile_data = {"nickname": username, "username": username, "likes": 0}
+        profile_data = {"nickname": username, "username": username}
         await send_json_safe(websocket, {"type": "system_status", "status": f"Could not retrieve profile for @{username}.", "level": "error"})
     
-    total_likes = profile_data.pop("likes", 0)
     await send_json_safe(websocket, {"type": "profile_info", "data": profile_data})
-    await send_json_safe(websocket, {"type": "total_likes_update", "count": total_likes})
     await send_json_safe(websocket, {"type": "status_update", "status": "offline"})
 
 @app.get("/")

@@ -29,8 +29,8 @@ def parse_user_data(user: Any) -> Dict[str, Any]:
         avatar_url = user.avatar.url_list[0]
 
     follow_info = getattr(user, 'follow_info', None)
-    followers = follow_info.follower_count if follow_info and hasattr(follow_info, 'follower_count') else 0
-    following = follow_info.following_count if follow_info and hasattr(follow_info, 'following_count') else 0
+    followers = getattr(follow_info, 'follower_count', 0) if follow_info else 0
+    following = getattr(follow_info, 'following_count', 0) if follow_info else 0
     
     bio = getattr(user, 'bio_description', "")
 

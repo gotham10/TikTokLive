@@ -16,6 +16,8 @@ from typing import Any, Dict
 
 app = FastAPI()
 
+logging.basicConfig(level=logging.INFO)
+
 async def send_json_safe(websocket: WebSocket, data: Dict[str, Any]):
     try:
         if websocket.application_state == WebSocketState.CONNECTED:
@@ -136,8 +138,6 @@ async def handle_tiktok_events(client: TikTokLiveClient, websocket: WebSocket):
         user_data = parse_user_data(event.user)
         user_data.update({"type": "like", "count": event.count})
         await forward_event(user_data)
-        if hasattr(event, 'total_likes'):
-            await forward_event({"type": "total_likes_update", "count": event.total_likes})
 
     @client.on(GiftEvent)
     async def on_gift(event: GiftEvent):

@@ -32,8 +32,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #27272a; border-radius: 20px; }
-        .settings-panel { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); transform: translateX(100%); }
-        .settings-panel.open { transform: translateX(0); }
+        .settings-panel, .profile-viewer-panel { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); transform: translateX(100%); }
+        .settings-panel.open, .profile-viewer-panel.open { transform: translateX(0); }
         .event-card { animation: slide-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slide-in-up { 0% { opacity: 0; transform: translateY(20px) scale(0.98); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
         .form-switch { position: relative; display: inline-block; width: 50px; height: 28px; }
@@ -41,15 +41,9 @@
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4b5563; transition: .4s; border-radius: 28px; }
         .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider:before { transform: translateX(22px); }
-        input:disabled, label:has(input:disabled) { opacity: 0.5; cursor: not-allowed !important; }
         .theme-selector span { transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .theme-selector span:hover { transform: scale(1.1); }
         .theme-selector span.active { transform: scale(1.15); box-shadow: 0 0 10px 2px currentColor; }
-        .gift-card-tier-1 { border-left: 3px solid #6b7280; }
-        .gift-card-tier-2 { border-left: 3px solid #22c55e; }
-        .gift-card-tier-3 { border-left: 3px solid #3b82f6; }
-        .gift-card-tier-4 { border-left: 3px solid #a855f7; }
-        .gift-card-tier-5 { border-left: 3px solid #f59e0b; box-shadow: 0 0 15px -2px #f59e0b; }
         .tab-content, .view { display: none; }
         .tab-content.active, .view.active { display: flex; }
         .view { animation-duration: 0.4s; animation-fill-mode: forwards; }
@@ -57,7 +51,7 @@
         .view.fade-out { animation-name: view-fade-out; }
         @keyframes view-fade-in { from { opacity: 0; } to { opacity: 1; } }
         @keyframes view-fade-out { from { opacity: 1; } to { opacity: 0; } }
-        .viewer-stats-card { display: none; background: rgba(20, 20, 22, 0.95); backdrop-filter: blur(8px); }
+        .viewer-stats-card { display: none; background: rgba(18, 18, 20, 0.95); backdrop-filter: blur(8px); }
         .show-viewer-stats .viewer-avatar-wrapper:hover .viewer-stats-card {
             display: block; opacity: 1; transform: scale(1) translateY(0);
         }
@@ -72,12 +66,19 @@
         <div id="offline-profile-content" class="max-w-md w-full glass-card rounded-2xl p-6 shadow-2xl"></div>
         <div id="offline-status-message" class="mt-6 text-xl font-bold text-red-400"></div>
     </div>
+    <div id="profile-viewer-panel" class="profile-viewer-panel fixed top-0 right-0 h-full w-1/3 min-w-[400px] bg-zinc-900/80 backdrop-blur-xl border-l border-zinc-700 shadow-2xl z-50 flex flex-col">
+        <div class="flex-shrink-0 p-4 flex justify-between items-center border-b border-zinc-800">
+            <h2 class="text-xl font-bold text-white">TikTok Profile</h2>
+            <button id="close-profile-viewer-button" class="text-zinc-400 hover:text-white transition-colors"><i class="fa-solid fa-times fa-xl"></i></button>
+        </div>
+        <iframe id="profile-viewer-iframe" class="w-full h-full border-0"></iframe>
+    </div>
     <div id="settings-panel" class="settings-panel fixed top-0 right-0 h-full w-full max-w-2xl bg-zinc-900/80 backdrop-blur-xl border-l border-zinc-700 shadow-2xl z-50 flex flex-col">
         <div class="flex-shrink-0 p-6 flex justify-between items-center border-b border-zinc-800">
             <h2 class="text-2xl font-bold text-white">Settings</h2>
             <button id="close-settings-button" class="text-zinc-400 hover:text-white transition-colors"><i class="fa-solid fa-times fa-xl"></i></button>
         </div>
-        <div class="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-6">
+        <div id="settings-content" class="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-6">
              <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
                 <h3 class="text-lg font-semibold text-white mb-4">Appearance</h3>
                 <div class="theme-selector flex items-center justify-around p-2 bg-zinc-900 rounded-lg">
@@ -99,10 +100,52 @@
                     <label class="form-switch"><input type="checkbox" id="show-viewer-stats-toggle"><span class="slider"></span></label>
                 </div>
             </div>
+            <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
+                <h3 class="text-lg font-semibold text-white mb-3">Master TTS Control</h3>
+                <div class="flex items-center justify-between p-4 rounded-lg bg-zinc-900">
+                    <span class="font-semibold text-lg text-white">Enable Text-to-Speech</span>
+                    <label class="form-switch"><input type="checkbox" id="tts-enabled-toggle"><span class="slider"></span></label>
+                </div>
+            </div>
+            <div id="tts-config-container" class="space-y-6 transition-opacity duration-300">
+                <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
+                    <h3 class="text-lg font-semibold text-white mb-3">Credentials</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="tts-api-key" class="block text-sm font-medium text-gray-300 mb-2">ElevenLabs API Key</label>
+                            <input type="password" id="tts-api-key" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2">
+                        </div>
+                        <div class="relative">
+                            <label for="tts-voice-id" class="block text-sm font-medium text-gray-300 mb-2">Voice ID</label>
+                            <input type="text" id="tts-voice-id" class="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 pr-10">
+                            <button id="tts-test-voice" class="absolute right-2 top-9 text-zinc-400 hover:text-white"><i class="fa-solid fa-play"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
+                    <h3 class="text-lg font-semibold text-white mb-3">Event Configuration</h3>
+                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                        <label class="flex items-center space-x-3"><input type="checkbox" id="tts-announce-join" class="form-checkbox"><span>Announce Joins</span></label>
+                        <label class="flex items-center space-x-3"><input type="checkbox" id="tts-announce-follow" class="form-checkbox"><span>Announce Follows</span></label>
+                        <label class="flex items-center space-x-3"><input type="checkbox" id="tts-announce-share" class="form-checkbox"><span>Announce Shares</span></label>
+                        <label class="flex items-center space-x-3"><input type="checkbox" id="tts-announce-like" class="form-checkbox"><span>Announce Likes</span></label>
+                        <label class="flex items-center space-x-3"><input type="checkbox" id="tts-announce-comment" class="form-checkbox"><span>Announce Comments</span></label>
+                        <label class="flex items-center space-x-3"><input type="checkbox" id="tts-announce-gift" class="form-checkbox"><span>Announce Gifts</span></label>
+                    </div>
+                    <div class="mt-6 space-y-3">
+                        <input type="text" id="tts-template-join" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Join Template">
+                        <input type="text" id="tts-template-follow" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Follow Template">
+                        <input type="text" id="tts-template-share" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Share Template">
+                        <input type="text" id="tts-template-like" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Like Template">
+                        <input type="text" id="tts-template-comment" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Comment Template">
+                        <input type="text" id="tts-template-gift" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2" placeholder="Gift Template">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <div id="live-view" class="view flex-col h-full w-full p-4 space-y-4">
-        <div id="status-bar" class="flex-shrink-0 glass-card p-3 rounded-lg flex justify-between items-center">
+    <div id="live-view" class="view flex-col h-full p-4 space-y-4">
+        <div class="flex-shrink-0 glass-card p-3 rounded-lg flex justify-between items-center">
             <p id="tracking-status" class="font-semibold text-gray-300"></p>
             <div class="flex items-center gap-4">
                 <p id="connection-status" class="font-semibold text-sm"></p>
@@ -113,22 +156,20 @@
             <div id="comment-container-wrapper" class="col-span-2 row-span-2 flex flex-col glass-card rounded-lg p-3">
                 <h2 class="text-lg font-bold text-gray-200 mb-2 border-b border-zinc-700 pb-2">Live Chat</h2>
                 <div class="flex items-center space-x-2 mb-2 flex-shrink-0">
-                    <input type="text" id="chat-search-input" class="bg-zinc-800 text-gray-300 text-sm rounded-md w-full px-3 py-1.5 border border-transparent focus:outline-none focus:ring-2" placeholder="Search...">
-                    <button id="chat-filter-button" class="bg-zinc-700 hover:bg-zinc-600 text-gray-200 w-12 h-9 flex-shrink-0 flex items-center justify-center rounded-md transition-colors" title="Filter by Message">
-                        <i id="chat-filter-icon" class="fa-solid fa-message"></i>
-                    </button>
+                    <input type="text" id="chat-search-input" class="bg-zinc-800 text-sm rounded-md w-full px-3 py-1.5" placeholder="Search...">
+                    <button id="chat-filter-button" class="bg-zinc-700 w-12 h-9 flex-shrink-0 rounded-md" title="Filter by Message"><i id="chat-filter-icon" class="fa-solid fa-message"></i></button>
                 </div>
                 <div id="comment-container" class="flex-grow overflow-y-auto space-y-3 custom-scrollbar pr-2"></div>
             </div>
             <div class="col-span-2 row-span-1 flex flex-col glass-card rounded-lg p-3">
                 <div class="flex border-b border-zinc-700 mb-2">
-                    <button id="tab-profile" class="tab-button active py-2 px-4 text-sm font-semibold border-b-2 border-transparent">Profile</button>
+                    <button id="tab-profile" class="tab-button active py-2 px-4 text-sm font-semibold border-b-2">Profile</button>
                     <button id="tab-top-gifters" class="tab-button py-2 px-4 text-sm font-semibold border-b-2 border-transparent">Top Gifters</button>
                     <button id="tab-room" class="tab-button py-2 px-4 text-sm font-semibold border-b-2 border-transparent">Room Info</button>
                 </div>
                 <div class="flex-grow overflow-y-auto custom-scrollbar pr-2 relative">
                     <div id="content-profile" class="tab-content active flex-col items-center"></div>
-                    <div id="content-top-gifters" class="tab-content text-sm text-gray-400 space-y-2"><p class="text-center italic text-zinc-500 pt-4">No gifts received yet.</p></div>
+                    <div id="content-top-gifters" class="tab-content"><p class="text-center italic text-zinc-500 pt-4">No gifts received yet.</p></div>
                     <div id="content-room" class="tab-content"><pre class="text-xs text-gray-400">Awaiting Room Info...</pre></div>
                 </div>
             </div>
@@ -138,17 +179,15 @@
                     <span id="activity-filter-display" class="text-sm font-semibold" style="color: var(--color-primary)">All</span>
                 </div>
                 <div class="flex items-center space-x-2 mb-2 flex-shrink-0">
-                    <input type="text" id="activity-search-input" class="bg-zinc-800 text-gray-300 text-sm rounded-md w-full px-3 py-1.5 border border-transparent focus:outline-none focus:ring-2" placeholder="Search users...">
+                    <input type="text" id="activity-search-input" class="bg-zinc-800 text-sm rounded-md w-full px-3 py-1.5" placeholder="Search users...">
                      <div class="relative">
-                        <button id="activity-filter-button" class="bg-zinc-700 hover:bg-zinc-600 text-gray-200 w-9 h-9 flex items-center justify-center rounded-md transition-colors">
-                            <i class="fa-solid fa-filter"></i>
-                        </button>
+                        <button id="activity-filter-button" class="bg-zinc-700 w-9 h-9 rounded-md"><i class="fa-solid fa-filter"></i></button>
                         <div id="activity-filter-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-zinc-800 rounded-md shadow-lg z-10">
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="all">All</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="gift">Gifts</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="follow">Follows</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="share">Shares</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-zinc-700" data-filter="join">Joins</a>
+                            <a href="#" class="block px-4 py-2 text-sm" data-filter="all">All</a>
+                            <a href="#" class="block px-4 py-2 text-sm" data-filter="gift">Gifts</a>
+                            <a href="#" class="block px-4 py-2 text-sm" data-filter="follow">Follows</a>
+                            <a href="#" class="block px-4 py-2 text-sm" data-filter="share">Shares</a>
+                            <a href="#" class="block px-4 py-2 text-sm" data-filter="join">Joins</a>
                         </div>
                     </div>
                 </div>
@@ -160,11 +199,12 @@
         const ui = {
             views: { loading: document.getElementById('loading-view'), offline: document.getElementById('offline-view'), live: document.getElementById('live-view') },
             containers: { comment: document.getElementById('comment-container'), activity: document.getElementById('activity-container'), profile: document.getElementById('content-profile'), room: document.getElementById('content-room'), topGifters: document.getElementById('content-top-gifters'), offlineProfile: document.getElementById('offline-profile-content'), commentWrapper: document.getElementById('comment-container-wrapper') },
-            status: { tracking: document.getElementById('tracking-status'), connection: document.getElementById('connection-status'), loadingText: document.getElementById('loading-text'), offlineMessage: document.getElementById('offline-status-message') },
+            status: { tracking: document.getElementById('tracking-status'), connection: document.getElementById('connection-status'), offlineMessage: document.getElementById('offline-status-message') },
             tabPanes: document.querySelectorAll('.tab-content'),
             tabButtons: document.querySelectorAll('.tab-button'),
             chat: { search: document.getElementById('chat-search-input'), filterBtn: document.getElementById('chat-filter-button'), filterIcon: document.getElementById('chat-filter-icon') },
             activity: { search: document.getElementById('activity-search-input'), filterBtn: document.getElementById('activity-filter-button'), filterDropdown: document.getElementById('activity-filter-dropdown'), filterDisplay: document.getElementById('activity-filter-display') },
+            profileViewer: { panel: document.getElementById('profile-viewer-panel'), iframe: document.getElementById('profile-viewer-iframe'), closeBtn: document.getElementById('close-profile-viewer-button') },
             settings: {
                 panel: document.getElementById('settings-panel'),
                 openBtn: document.getElementById('settings-button'),
@@ -173,26 +213,29 @@
                 themeSelectors: document.querySelectorAll('.theme-selector span'),
                 customColorPicker: document.getElementById('custom-color-picker'),
                 customColorInput: document.getElementById('custom-color-input'),
+                apiKey: document.getElementById('tts-api-key'),
+                voiceId: document.getElementById('tts-voice-id'),
+                testVoiceBtn: document.getElementById('tts-test-voice'),
+                enabled: document.getElementById('tts-enabled-toggle'),
+                configContainer: document.getElementById('tts-config-container'),
+                announce: { comment: document.getElementById('tts-announce-comment'), like: document.getElementById('tts-announce-like'), gift: document.getElementById('tts-announce-gift'), follow: document.getElementById('tts-announce-follow'), share: document.getElementById('tts-announce-share'), join: document.getElementById('tts-announce-join'), },
+                templates: { comment: document.getElementById('tts-template-comment'), like: document.getElementById('tts-template-like'), gift: document.getElementById('tts-template-gift'), follow: document.getElementById('tts-template-follow'), share: document.getElementById('tts-template-share'), join: document.getElementById('tts-template-join'), },
             }
         };
 
-        let settings = {}, topGifters = {};
+        let settings = {}, topGifters = {}, ttsQueue = [], isSpeaking = false;
         let chatFilterMode = 'message', activityFilterType = 'all';
         const defaultAvatar = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23404040"/><text x="50" y="55" font-family="Arial" font-size="40" fill="%23fafafa" text-anchor="middle">?</text></svg>')}`;
 
-        const defaultSettings = { theme: 'amethyst', customColor: null, showViewerStats: true };
+        const defaultSettings = { 
+            theme: 'amethyst', customColor: null, showViewerStats: true,
+            tts: {
+                apiKey: '', voiceId: '', enabled: false,
+                announce: { comment: true, like: false, gift: true, follow: true, share: false, join: false },
+                templates: { comment: '{user} said: {comment}', like: '{user} sent {count} likes', gift: '{user} sent {count} {gift_name}', follow: '{user} followed', share: '{user} shared the stream', join: '{user} joined' }
+            }
+        };
         
-        function hexToHsl(hex) {
-            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            if (!result) return null;
-            let r = parseInt(result[1], 16) / 255, g = parseInt(result[2], 16) / 255, b = parseInt(result[3], 16) / 255;
-            let max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, h, s;
-            if (max == min) { h = s = 0; } 
-            else { let d = max - min; s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-                switch (max) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; case b: h = (r - g) / d + 4; break; } h /= 6;
-            } return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-        }
-
         function saveAndApplySettings() {
             if(settings.theme !== 'custom') {
                 let currentTheme = 'amethyst';
@@ -200,6 +243,11 @@
                 settings.theme = currentTheme; settings.customColor = null;
             }
             settings.showViewerStats = ui.settings.viewerStats.checked;
+            settings.tts.apiKey = ui.settings.apiKey.value; settings.tts.voiceId = ui.settings.voiceId.value; settings.tts.enabled = ui.settings.enabled.checked;
+            for (const event in settings.tts.announce) {
+                settings.tts.announce[event] = ui.settings.announce[event].checked;
+                settings.tts.templates[event] = ui.settings.templates[event].value;
+            }
             localStorage.setItem('liveTrackerSettings', JSON.stringify(settings));
             applySettings();
         }
@@ -215,22 +263,56 @@
                 ui.settings.themeSelectors.forEach(selector => selector.classList.toggle('active', selector.dataset.theme === settings.theme));
             }
             ui.containers.commentWrapper.classList.toggle('show-viewer-stats', settings.showViewerStats);
+            const isTTSEnabled = settings.tts.enabled;
+            ui.settings.configContainer.style.opacity = isTTSEnabled ? '1' : '0.5';
+            ui.settings.configContainer.style.pointerEvents = isTTSEnabled ? 'auto' : 'none';
         }
 
         function loadSettings() {
-            const savedSettings = localStorage.getItem('liveTrackerSettings');
-            settings = savedSettings ? JSON.parse(savedSettings) : defaultSettings;
-            if (settings.customColor) ui.settings.customColorInput.value = settings.customColor;
+            const saved = localStorage.getItem('liveTrackerSettings');
+            settings = saved ? JSON.parse(saved) : defaultSettings;
+            if (!settings.tts) settings.tts = defaultSettings.tts;
+
             ui.settings.viewerStats.checked = settings.showViewerStats;
+            if (settings.customColor) ui.settings.customColorInput.value = settings.customColor;
+            
+            ui.settings.apiKey.value = settings.tts.apiKey;
+            ui.settings.voiceId.value = settings.tts.voiceId;
+            ui.settings.enabled.checked = settings.tts.enabled;
+            for (const event in settings.tts.announce) {
+                if(ui.settings.announce[event]) ui.settings.announce[event].checked = settings.tts.announce[event];
+                if(ui.settings.templates[event]) ui.settings.templates[event].value = settings.tts.templates[event];
+            }
             applySettings();
         }
-        
-        function renderTopGifters() {
-            const sortedGifters = Object.entries(topGifters).sort((a, b) => b[1].totalCoins - a[1].totalCoins);
-            if(sortedGifters.length === 0) { ui.containers.topGifters.innerHTML = '<p class="text-center italic text-zinc-500 pt-4">No gifts received yet.</p>'; return; }
-            ui.containers.topGifters.innerHTML = sortedGifters.map(([userId, data], index) => `<div class="flex items-center space-x-4 p-2 rounded-lg bg-zinc-800/50"><span class="font-bold text-lg w-6 text-center" style="color:var(--color-primary-glow)">#${index+1}</span><img src="${data.avatar||defaultAvatar}" class="w-10 h-10 rounded-full object-cover"><div class="flex-grow"><p class="font-semibold text-white">${data.user}</p><p class="text-xs text-zinc-400">${data.totalCoins.toLocaleString()} coins</p></div></div>`).join('');
+
+        async function playTTS(text) {
+            if (!text || !settings.tts.apiKey || !settings.tts.voiceId) { isSpeaking = false; processTTSQueue(); return; }
+            try {
+                const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${settings.tts.voiceId}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'xi-api-key': settings.tts.apiKey },
+                    body: JSON.stringify({ text, model_id: "eleven_turbo_v2" }) });
+                if (!response.ok) throw new Error("TTS API Error");
+                const blob = await response.blob();
+                const audio = new Audio(URL.createObjectURL(blob));
+                audio.onended = () => { isSpeaking = false; processTTSQueue(); };
+                audio.play();
+            } catch (error) { isSpeaking = false; processTTSQueue(); }
         }
         
+        function processTTSQueue() {
+            if (isSpeaking || ttsQueue.length === 0 || !settings.tts.enabled) return;
+            isSpeaking = true; playTTS(ttsQueue.shift());
+        }
+        
+        function addToTTSQueue(data, type) {
+            if (!settings.tts.enabled || !settings.tts.announce[type]) return;
+            if (type === 'comment' && !data.comment) return;
+            const template = settings.tts.templates[type]; if (!template) return;
+            const text = template.replace(/{user}/g, data.nickname||data.user).replace(/{comment}/g, data.comment).replace(/{count}/g, data.count).replace(/{gift_name}/g, data.gift_name);
+            if (text) { ttsQueue.push(text); processTTSQueue(); }
+        }
+
         function addEvent(container, htmlContent, data) {
             const wrapper = document.createElement('div');
             wrapper.innerHTML = htmlContent;
@@ -250,122 +332,83 @@
             }
         }
 
-        let currentView = 'loading';
-        function switchView(viewName) {
-            if (currentView === viewName) return;
-            const currentViewEl = ui.views[currentView];
-            const newViewEl = ui.views[viewName];
-            if (currentViewEl) { currentViewEl.classList.add('fade-out'); setTimeout(() => { currentViewEl.classList.remove('active', 'fade-out'); }, 400); }
-            if (newViewEl) { newViewEl.classList.remove('fade-out'); newViewEl.classList.add('active', 'fade-in'); }
-            currentView = viewName;
-        }
-
-        function resetUI() {
-            ui.containers.comment.innerHTML = '';
-            ui.containers.activity.innerHTML = '';
-            ui.containers.topGifters.innerHTML = '<p class="text-center italic text-zinc-500 pt-4">No gifts received yet.</p>';
-            topGifters = {};
-        }
-
-        function handleStreamEnd() {
-            resetUI();
-            ui.status.offlineMessage.textContent = 'Live stream has ended.';
-            switchView('offline');
-        }
-
         function processEvent(data) {
             let html, container;
-            const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            addToTTSQueue(data, data.type);
             switch (data.type) {
                 case 'status_update': data.status === 'live' ? switchView('live') : handleStreamEnd(); return;
                 case 'profile_info':
                     const profileHtml = `<div class="flex flex-col items-center space-y-4 pt-2 w-full max-w-sm mx-auto">
                         <img src="${data.data.avatar || defaultAvatar}" class="w-24 h-24 rounded-full border-4 glowing-avatar object-cover">
-                        <div class="text-center"><p class="text-2xl font-bold text-gray-100">${data.data.nickname||'N/A'}</p><p class="text-gray-400">@${data.data.username||'N/A'}</p></div>
+                        <div class="text-center"><p class="text-2xl font-bold">${data.data.nickname||'N/A'}</p><p>@${data.data.username||'N/A'}</p></div>
                         <div class="w-full grid grid-cols-2 gap-4 text-center glass-card rounded-lg p-3">
-                            <div><p class="font-bold text-gray-200 text-lg">${(data.data.followers||0).toLocaleString()}</p><p class="text-sm">Followers</p></div>
-                            <div><p class="font-bold text-gray-200 text-lg">${(data.data.following||0).toLocaleString()}</p><p class="text-sm">Following</p></div>
+                            <div><p class="font-bold text-lg">${(data.data.followers||0).toLocaleString()}</p><p class="text-sm">Followers</p></div>
+                            <div><p class="font-bold text-lg">${(data.data.following||0).toLocaleString()}</p><p class="text-sm">Following</p></div>
                         </div>
-                        <div class="w-full text-left glass-card rounded-lg p-3"> <p class="font-bold text-gray-300">Bio:</p> <p class="p-2 bg-zinc-900/50 rounded-md max-h-24 overflow-y-auto custom-scrollbar">${data.data.bio||'This user has not provided a bio.'}</p> </div>
+                        <div class="w-full text-left glass-card rounded-lg p-3"> <p class="font-bold">Bio:</p> <p class="p-2 bg-zinc-900/50 rounded-md max-h-24 overflow-y-auto custom-scrollbar">${data.data.bio||'No bio.'}</p> </div>
                     </div>`;
                     ui.containers.profile.innerHTML = profileHtml; ui.containers.offlineProfile.innerHTML = profileHtml; return;
-                case 'room_info_update': ui.containers.room.innerHTML = `<pre class="text-xs text-gray-400 whitespace-pre-wrap break-all">${JSON.stringify(data.data,null,2)}</pre>`; return;
                 case 'comment':
                     container = ui.containers.comment;
-                    html = `<div class="event-card"><div class="flex items-start space-x-3"><div class="relative viewer-avatar-wrapper">
-                        <img src="${data.avatar || defaultAvatar}" class="w-8 h-8 rounded-full mt-1 object-cover">
-                        <div class="viewer-stats-card absolute left-full top-0 ml-2 w-56 p-3 border border-zinc-700 rounded-lg shadow-xl z-10 opacity-0 transform scale-95 -translate-y-2 transition-all pointer-events-none">
-                            <p class="font-bold text-white text-sm">${data.nickname || data.user}</p><p class="text-xs text-zinc-400 mb-2">@${data.user}</p>
-                            <p class="text-xs text-zinc-300 max-h-16 overflow-auto custom-scrollbar pr-1">${data.bio || 'No bio available.'}</p>
-                            <div class="flex justify-between mt-2 text-xs pt-2 border-t border-zinc-700"><p>Followers: <span class="font-bold text-white">${(data.followers||0).toLocaleString()}</span></p><p>Following: <span class="font-bold text-white">${(data.following||0).toLocaleString()}</span></p></div></div></div>
-                        <div class="flex-grow"><p class="text-sm"><span class="font-bold text-gray-200">${data.nickname || data.user}:</span> <span class="text-gray-300">${data.comment}</span></p>
-                        <p class="text-xs text-zinc-500">${time}</p></div></div></div>`;
+                    html = `<div class="event-card"><div class="flex items-start space-x-3"><a href="https://www.tiktok.com/@${data.user}" class="profile-link relative viewer-avatar-wrapper">
+                        <img src="${data.avatar ? data.avatar : defaultAvatar}" class="w-8 h-8 rounded-full mt-1 object-cover">
+                        <div class="viewer-stats-card absolute left-full top-0 ml-2 w-56 p-3 border border-zinc-700 rounded-lg shadow-xl z-10 opacity-0"><p class="font-bold text-sm">${data.nickname||data.user}</p><p class="text-xs text-zinc-400 mb-2">@${data.user}</p><p class="text-xs max-h-16 overflow-auto custom-scrollbar pr-1">${data.bio||'No bio.'}</p><div class="flex justify-between mt-2 text-xs pt-2 border-t border-zinc-700"><p>Followers: <span class="font-bold">${(data.followers||0).toLocaleString()}</span></p><p>Following: <span class="font-bold">${(data.following||0).toLocaleString()}</span></p></div></div></a>
+                        <div class="flex-grow"><p class="text-sm"><span class="font-bold">${data.nickname||data.user}:</span> <span>${data.comment}</span></p></div></div></div>`;
                     break;
                 case 'gift':
-                    const coins = Number(data.coins) || 0, count = Number(data.count) || 1;
-                    if (data.user && coins > 0) {
-                        if (!topGifters[data.userId]) topGifters[data.userId] = { user: data.nickname || data.user, avatar: data.avatar, totalCoins: 0 };
-                        topGifters[data.userId].totalCoins += coins * count;
-                        renderTopGifters();
-                    }
-                    let giftTier = 'gift-card-tier-1'; if (coins >= 1000) giftTier = 'gift-card-tier-5'; else if (coins >= 500) giftTier = 'gift-card-tier-4'; else if (coins >= 100) giftTier = 'gift-card-tier-3'; else if (coins >= 10) giftTier = 'gift-card-tier-2';
+                    if (data.user) { topGifters[data.userId] = { user: data.nickname || data.user, avatar: data.avatar, totalCoins: (topGifters[data.userId]?.totalCoins || 0) + (Number(data.coins) || 0) * (Number(data.count) || 1) }; renderTopGifters(); }
                     container = ui.containers.activity;
-                    html = `<div class="event-card"><div class="flex items-center space-x-3 p-2 rounded-lg bg-zinc-800/60 ${giftTier}"><img src="${data.gift_image_url || defaultAvatar}" class="w-10 h-10"><div class="flex-grow"><p class="text-sm text-white">${data.nickname || data.user} sent ${count}x <b>${data.gift_name}</b>!</p><p class="text-xs text-zinc-400">${(coins*count).toLocaleString()} coins • ${time}</p></div></div></div>`;
+                    html = `<div class="event-card"><div class="flex items-center space-x-3 p-2 rounded-lg"><img src="${data.gift_image_url || defaultAvatar}" class="w-10 h-10"><p class="text-sm">${data.nickname||data.user} sent ${data.count}x <b>${data.gift_name}</b>!</p></div></div>`;
                     break;
-                case 'like': case 'follow': case 'share': case 'join':
-                    const iconMap = { like: 'fa-heart text-red-500', follow: 'fa-user-plus text-sky-400', share: 'fa-share text-purple-400', join: 'fa-right-to-bracket text-gray-400' };
-                    const textMap = { like: `sent ${data.count || 1} like(s)!`, follow: 'followed!', share: 'shared!', join: 'joined!' };
+                default:
+                    const iconMap = { like: 'fa-heart text-red-500', follow: 'fa-user-plus', share: 'fa-share', join: 'fa-right-to-bracket' };
+                    const textMap = { like: `sent ${data.count||1} like(s)!`, follow: 'followed!', share: 'shared!', join: 'joined!' };
+                    if (!textMap[data.type]) return;
                     container = ui.containers.activity;
-                    html = `<div class="event-card"><div class="flex items-center space-x-3 text-sm p-1.5"><i class="fa-solid ${iconMap[data.type]} w-4 text-center"></i><p class="text-zinc-300"><span class="font-semibold text-white">${data.nickname || data.user}</span> ${textMap[data.type]}</p><p class="text-xs text-zinc-500 ml-auto">${time}</p></div></div>`;
-                    break;
-                case 'system_status': ui.status.connection.innerHTML = `<span>${statusIcons[data.level] || ''}${data.status}</span>`; return;
-                default: return;
+                    html = `<div class="event-card"><div class="flex items-center space-x-3 text-sm p-1.5"><i class="fa-solid ${iconMap[data.type]} w-4 text-center"></i><a href="https://www.tiktok.com/@${data.user}" class="profile-link font-semibold">${data.nickname||data.user}</a><p>${textMap[data.type]}</p></div></div>`;
             }
             if (container) addEvent(container, html, data);
         }
 
-        function filterChat(card) {
-            const cards = card ? [card] : ui.containers.comment.querySelectorAll('.event-card');
-            const query = ui.chat.search.value.toLowerCase();
+        function filter(cards, query, mode) {
             cards.forEach(c => {
-                const user = c.dataset.user.toLowerCase(); const message = c.dataset.comment.toLowerCase();
-                const match = chatFilterMode === 'user' ? user.includes(query) : message.includes(query);
+                const user = c.dataset.user.toLowerCase(); const msg = c.dataset.comment.toLowerCase();
+                const match = mode === 'user' ? user.includes(query) : msg.includes(query);
                 c.style.display = match ? '' : 'none';
             });
         }
+
         function filterActivity(card) {
             const cards = card ? [card] : ui.containers.activity.querySelectorAll('.event-card');
             const query = ui.activity.search.value.toLowerCase();
             cards.forEach(c => {
                 const user = c.dataset.user.toLowerCase(); const type = c.dataset.type;
-                const typeMatch = activityFilterType === 'all' || activityFilterType === type;
-                const userMatch = user.includes(query);
-                c.style.display = typeMatch && userMatch ? '' : 'none';
+                c.style.display = (activityFilterType==='all'||activityFilterType===type) && user.includes(query) ? '' : 'none';
             });
         }
+        function filterChat(card) { filter(card ? [card] : ui.containers.comment.querySelectorAll('.event-card'), ui.chat.search.value.toLowerCase(), chatFilterMode); }
         
         function setupEventListeners() {
             ui.settings.openBtn.addEventListener('click', () => ui.settings.panel.classList.add('open'));
             ui.settings.closeBtn.addEventListener('click', () => ui.settings.panel.classList.remove('open'));
+            ui.profileViewer.closeBtn.addEventListener('click', () => { ui.profileViewer.panel.classList.remove('open'); ui.profileViewer.iframe.src = 'about:blank'; });
+            document.body.addEventListener('click', (e) => { 
+                const link = e.target.closest('.profile-link');
+                if (link) { e.preventDefault(); ui.profileViewer.iframe.src = link.href; ui.profileViewer.panel.classList.add('open'); }
+            });
             ui.chat.search.addEventListener('input', () => filterChat());
             ui.activity.search.addEventListener('input', () => filterActivity());
             ui.chat.filterBtn.addEventListener('click', () => {
                 chatFilterMode = chatFilterMode === 'message' ? 'user' : 'message';
-                ui.chat.filterIcon.className = `fa-solid fa-${chatFilterMode === 'message' ? 'message' : 'user'}`;
-                ui.chat.filterBtn.title = `Filter by ${chatFilterMode === 'message' ? 'Message' : 'User'}`;
+                ui.chat.filterIcon.className = `fa-solid fa-${chatFilterMode==='message'?'message':'user'}`;
                 filterChat();
             });
             ui.activity.filterBtn.addEventListener('click', (e) => { e.stopPropagation(); ui.activity.filterDropdown.classList.toggle('hidden'); });
             document.addEventListener('click', () => ui.activity.filterDropdown.classList.add('hidden'));
 
             ui.activity.filterDropdown.addEventListener('click', (e) => {
-                e.preventDefault();
                 const anchor = e.target.closest('a');
-                if(anchor) { 
-                    activityFilterType = anchor.dataset.filter; 
-                    ui.activity.filterDisplay.textContent = anchor.textContent;
-                    filterActivity(); 
-                }
+                if(anchor) { e.preventDefault(); activityFilterType = anchor.dataset.filter; ui.activity.filterDisplay.textContent = anchor.textContent; filterActivity(); }
             });
 
             const allSettingsInputs = document.querySelectorAll('#settings-content input');
@@ -374,26 +417,23 @@
                 input.addEventListener(eventType, saveAndApplySettings);
             });
             
-            ui.settings.themeSelectors.forEach(selector => selector.addEventListener('click', () => {
-                settings.theme = selector.dataset.theme; settings.customColor = null; ui.settings.customColorInput.value = ''; saveAndApplySettings();
-            }));
-
+            ui.settings.themeSelectors.forEach(selector => selector.addEventListener('click', () => { settings.theme = selector.dataset.theme; settings.customColor = null; ui.settings.customColorInput.value = ''; saveAndApplySettings(); }));
             ui.settings.customColorPicker.addEventListener('input', (e) => { settings.customColor = e.target.value; ui.settings.customColorInput.value = e.target.value; settings.theme = 'custom'; saveAndApplySettings(); });
             ui.settings.customColorInput.addEventListener('input', (e) => { const hex = e.target.value; if (/^#([0-9A-F]{3}){1,2}$/i.test(hex)) { settings.customColor = hex; settings.theme = 'custom'; saveAndApplySettings(); } });
-
-            ui.tabButtons.forEach(button => button.addEventListener('click', () => {
-                ui.tabButtons.forEach(btn => btn.classList.remove('active')); button.classList.add('active');
-                ui.tabPanes.forEach(pane => pane.classList.toggle('active', pane.id === `content-${button.id.split('-')[1]}`));
-            }));
+            ui.tabButtons.forEach(button => button.addEventListener('click', () => { ui.tabButtons.forEach(btn => btn.classList.remove('active')); button.classList.add('active'); ui.tabPanes.forEach(pane => pane.classList.toggle('active', pane.id === `content-${button.id.split('-')[1]}`)); }));
         }
 
+        let currentView = 'loading';
+        function switchView(viewName) { if (currentView === viewName) return; const c = ui.views[currentView], n = ui.views[viewName]; if(c){c.classList.add('fade-out'); setTimeout(()=>c.classList.remove('active','fade-out'),400);} if(n){n.classList.remove('fade-out');n.classList.add('active','fade-in');} currentView = viewName; }
+        function resetUI() { ui.containers.comment.innerHTML = ''; ui.containers.activity.innerHTML = ''; ui.containers.topGifters.innerHTML = '<p>No gifts yet.</p>'; topGifters = {}; }
+        function handleStreamEnd() { resetUI(); ui.status.offlineMessage.textContent = 'Live stream has ended.'; switchView('offline'); }
+
         function connect() {
-            const username = window.location.pathname.split('/').filter(p => p)[0];
-            if (!username) { ui.status.offlineMessage.textContent = 'No username provided in URL.'; switchView('offline'); document.title = 'Error | TikTok Live Tracker'; return; }
-            resetUI(); switchView('loading'); ui.status.tracking.innerHTML = `Tracking: <span class="font-bold text-white text-lg">${username}</span>`;
-            const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-            const ws = new WebSocket(`${protocol}://${location.host}/ws/${username}`);
-            ws.onmessage = (event) => { try { processEvent(JSON.parse(event.data)); } catch (e) { console.error("Message Parse Error:", e, event.data); } };
+            const username = window.location.pathname.split('/').filter(p=>p)[0];
+            if (!username) { ui.status.offlineMessage.textContent = 'No username in URL.'; switchView('offline'); return; }
+            resetUI(); switchView('loading'); ui.status.tracking.innerHTML = `Tracking: <span class="font-bold">${username}</span>`;
+            const ws = new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/${username}`);
+            ws.onmessage = (event) => { try { processEvent(JSON.parse(event.data)); } catch (e) {} };
             ws.onclose = () => setTimeout(connect, 5000);
             ws.onerror = (e) => ws.close();
         }
